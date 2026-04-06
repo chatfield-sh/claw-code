@@ -5230,6 +5230,10 @@ impl runtime::PermissionPrompter for CliPermissionPrompter {
 struct AnthropicRuntimeClient {
     runtime: tokio::runtime::Runtime,
     client: AnthropicClient,
+    /// Deferred auth error: set when credentials are absent at construction
+    /// time so that credential-free slash commands (e.g. `/doctor`) can run
+    /// inside the REPL before any API turn is attempted.
+    startup_auth_error: Option<String>,
     model: String,
     enable_tools: bool,
     emit_output: bool,
@@ -5248,11 +5252,16 @@ impl AnthropicRuntimeClient {
         tool_registry: GlobalToolRegistry,
         progress_reporter: Option<InternalPromptProgressReporter>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let (auth, startup_auth_error) = match resolve_cli_auth_source() {
+            Ok(auth) => (auth, None),
+            Err(error) => (AuthSource::None, Some(error.to_string())),
+        };
         Ok(Self {
             runtime: tokio::runtime::Runtime::new()?,
-            client: AnthropicClient::from_auth(resolve_cli_auth_source()?)
+            client: AnthropicClient::from_auth(auth)
                 .with_base_url(api::read_base_url())
                 .with_prompt_cache(PromptCache::new(session_id)),
+            startup_auth_error,
             model,
             enable_tools,
             emit_output,
@@ -5276,6 +5285,9 @@ fn resolve_cli_auth_source() -> Result<AuthSource, Box<dyn std::error::Error>> {
 impl ApiClient for AnthropicRuntimeClient {
     #[allow(clippy::too_many_lines)]
     fn stream(&mut self, request: ApiRequest) -> Result<Vec<AssistantEvent>, RuntimeError> {
+        if let Some(error) = &self.startup_auth_error {
+            return Err(RuntimeError::new(error.clone()));
+        }
         if let Some(progress_reporter) = &self.progress_reporter {
             progress_reporter.mark_model_phase();
         }
