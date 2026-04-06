@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
+axum = "0.7"
 chrono = { version = "0.4", features = ["serde"] }
 crossterm = "0.28"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
@@ -19,6 +20,7 @@ rustyline = "15"
 serde = { version = "1", features = ["derive"] }
 serde_json.workspace = true
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tower-http = { version = "0.5", features = ["cors"] }
 uuid = { version = "1", features = ["v4"] }
 
 [lints]
