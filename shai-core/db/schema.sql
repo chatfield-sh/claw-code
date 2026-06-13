@@ -76,7 +76,8 @@ CREATE TABLE IF NOT EXISTS email_item (
     stake       numeric NOT NULL DEFAULT 0,  -- triage priority
     status      text NOT NULL DEFAULT 'unread', -- unread | triaged | drafted | archived
     received_at timestamptz,
-    created_at  timestamptz NOT NULL DEFAULT now()
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, gmail_id)             -- dedupe on ingest
 );
 
 CREATE TABLE IF NOT EXISTS draft_reply (

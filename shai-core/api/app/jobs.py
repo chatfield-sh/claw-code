@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import sys
 
-from . import repo
+from . import ingest, repo
 from .agents.brief import BriefAgent
 from .audit import record
 from .config import settings
@@ -62,10 +62,25 @@ def run_daily_brief(eod: bool = False) -> int:
     return count
 
 
+def run_sync() -> dict:
+    """Ingest Gmail + calendar for every connected user. Safe with none connected."""
+    emails = events = 0
+    for ctx in _contexts():
+        emails += ingest.sync_inbox(ctx)
+        events += ingest.sync_calendar(ctx)
+        if emails or events:
+            record(ctx, "cron", "ingest", {"emails": emails, "events": events})
+    return {"emails": emails, "events": events}
+
+
 def main(argv: list[str]) -> int:
     mode = (argv[1] if len(argv) > 1 else "morning").lower()
+    if mode == "sync":
+        result = run_sync()
+        print(f"synced {result['emails']} email(s), {result['events']} event(s)")
+        return 0
     if mode not in {"morning", "eod"}:
-        print("usage: python -m app.jobs [morning|eod]", file=sys.stderr)
+        print("usage: python -m app.jobs [morning|eod|sync]", file=sys.stderr)
         return 2
     n = run_daily_brief(eod=(mode == "eod"))
     print(f"generated {n} {mode} brief(s)")

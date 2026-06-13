@@ -145,6 +145,26 @@ def list_inbox(access_token: str, max_results: int = 10) -> list[dict]:
     return resp.json().get("messages", [])
 
 
+def get_message(access_token: str, message_id: str) -> dict:
+    """Fetch a message's headers + snippet (metadata format; no body download)."""
+    resp = httpx.get(
+        f"{GMAIL_API}/messages/{message_id}",
+        headers=_headers(access_token),
+        params={"format": "metadata", "metadataHeaders": ["From", "Subject", "Date"]},
+        timeout=15,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    headers = {h["name"].lower(): h["value"] for h in data.get("payload", {}).get("headers", [])}
+    return {
+        "gmail_id": data.get("id", message_id),
+        "sender": headers.get("from"),
+        "subject": headers.get("subject"),
+        "snippet": data.get("snippet"),
+        "date": headers.get("date"),
+    }
+
+
 def create_draft(access_token: str, to: str, subject: str, body: str) -> dict:
     """Create a Gmail draft. Never sends — the user approves and sends in Gmail."""
     msg = EmailMessage()

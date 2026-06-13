@@ -170,6 +170,33 @@ def create_module_insight(ctx: RequestContext, module_record_id: str, module_key
     )
 
 
+# ---- Email items (ingestion) ----------------------------------------------
+def upsert_email_item(ctx: RequestContext, gmail_id: str, sender: str | None,
+                      subject: str | None, snippet: str | None, stake: float,
+                      received_at: Any) -> dict | None:
+    """Insert or update a synced inbox message (dedupe on tenant + gmail_id)."""
+    return _one(
+        """
+        INSERT INTO email_item
+            (tenant_id, user_id, gmail_id, sender, subject, snippet, stake, status, received_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, 'triaged', %s)
+        ON CONFLICT (tenant_id, gmail_id) DO UPDATE SET
+            sender=EXCLUDED.sender, subject=EXCLUDED.subject,
+            snippet=EXCLUDED.snippet, stake=EXCLUDED.stake
+        RETURNING *
+        """,
+        (ctx.tenant_id, ctx.user_id, gmail_id, sender, subject, snippet, stake, received_at),
+    )
+
+
+def list_email_items(ctx: RequestContext, limit: int = 50) -> list[dict] | None:
+    return _fetch(
+        "SELECT * FROM email_item WHERE tenant_id=%s ORDER BY stake DESC, received_at DESC "
+        "NULLS LAST LIMIT %s",
+        (ctx.tenant_id, limit),
+    )
+
+
 # ---- Google credentials + calendar sync -----------------------------------
 def store_google_credential(ctx: RequestContext, access_token: str,
                             refresh_token: str | None, scope: str | None,

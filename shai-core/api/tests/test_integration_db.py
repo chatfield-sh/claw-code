@@ -110,6 +110,19 @@ def test_cron_persists_a_brief():
     assert snap is not None and "payload" in snap
 
 
+def test_email_item_upsert_dedupes_on_gmail_id():
+    gid = f"gmail-{_tag()}"
+    first = repo.upsert_email_item(CTX, gid, "a@b.com", "Hello", "snippet", 40, None)
+    assert first is not None and first["stake"] == 40
+    # Re-sync the same message with a new stake -> updates in place, no duplicate.
+    second = repo.upsert_email_item(CTX, gid, "a@b.com", "Hello", "snippet", 75, None)
+    assert second["id"] == first["id"]
+    assert second["stake"] == 75
+
+    listed = repo.list_email_items(CTX)
+    assert listed is not None and sum(1 for r in listed if r["gmail_id"] == gid) == 1
+
+
 def test_migrate_is_idempotent():
     from app import migrate
 

@@ -6,14 +6,31 @@ never send); otherwise it is staged in the response for the user to copy.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
-from .. import google
+from .. import google, ingest, repo
 from ..agents.email import EmailAgent
 from ..deps import RequestContext, get_current_user
 
 router = APIRouter(prefix="/inbox", tags=["inbox"])
 _agent = EmailAgent()
+
+
+@router.get("")
+def list_inbox(ctx: RequestContext = Depends(get_current_user)) -> dict:
+    """Return synced inbox messages, ranked by stake."""
+    rows = repo.list_email_items(ctx)
+    return {"items": [dict(r) for r in (rows or [])]}
+
+
+@router.post("/sync")
+def sync(ctx: RequestContext = Depends(get_current_user)) -> dict:
+    """Pull recent Gmail into email_item, triaged by stake."""
+    if not google.is_configured():
+        raise HTTPException(status_code=400, detail="Google connectors not configured.")
+    if not repo.get_google_credential(ctx):
+        raise HTTPException(status_code=400, detail="Google not connected for this user.")
+    return {"synced": ingest.sync_inbox(ctx)}
 
 
 @router.post("/triage")

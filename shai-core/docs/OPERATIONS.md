@@ -17,10 +17,16 @@ python -m app.jobs eod       # end-of-day recap
 Schedule it with cron (server local time):
 
 ```cron
-# 06:30 morning brief, 18:30 EOD recap
-30 6  * * *  cd /srv/shai/api && . .venv/bin/activate && python -m app.jobs morning
-30 18 * * *  cd /srv/shai/api && . .venv/bin/activate && python -m app.jobs eod
+# every 15 min: ingest Gmail + calendar; 06:30 morning brief, 18:30 EOD recap
+*/15 * * * *  cd /srv/shai/api && . .venv/bin/activate && python -m app.jobs sync
+30 6  * * *   cd /srv/shai/api && . .venv/bin/activate && python -m app.jobs morning
+30 18 * * *   cd /srv/shai/api && . .venv/bin/activate && python -m app.jobs eod
 ```
+
+`python -m app.jobs sync` pulls recent Gmail into `email_item` (triaged by
+stake) and primary-calendar events into `calendar_event`, for every connected
+user. It is a no-op when Google is not configured/connected, so it is safe to
+schedule unconditionally. On demand: `POST /inbox/sync`, `POST /google/calendar/sync`.
 
 Fetch the latest generated brief over HTTP:
 

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from .. import google, repo, security
+from .. import google, ingest, repo, security
 from ..deps import RequestContext, get_current_user
 
 router = APIRouter(prefix="/google", tags=["google"])
@@ -52,17 +52,8 @@ def callback(code: str, state: str = "", ctx: RequestContext = Depends(get_curre
 @router.post("/calendar/sync")
 def calendar_sync(ctx: RequestContext = Depends(get_current_user)) -> dict:
     """Pull primary-calendar events into calendar_event (tenant-scoped)."""
-    token = google.access_token_for(ctx)
-    if not token:
+    if not google.is_configured():
+        raise HTTPException(status_code=400, detail="Google connectors not configured.")
+    if not repo.get_google_credential(ctx):
         raise HTTPException(status_code=400, detail="Google not connected for this user.")
-    events = google.list_calendar_events(token)
-    synced = 0
-    for ev in events:
-        start = (ev.get("start") or {}).get("dateTime") or (ev.get("start") or {}).get("date")
-        end = (ev.get("end") or {}).get("dateTime") or (ev.get("end") or {}).get("date")
-        repo.upsert_calendar_event(
-            ctx, ev.get("id", ""), ev.get("summary", "(no title)"),
-            start, end, ev.get("location"),
-        )
-        synced += 1
-    return {"synced": synced}
+    return {"synced": ingest.sync_calendar(ctx)}
