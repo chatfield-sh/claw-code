@@ -4,9 +4,15 @@ from __future__ import annotations
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEFAULT_SECRET = "dev-insecure-change-me"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
+
+    # dev | prod. In prod the config validator fails closed on weak/missing secrets.
+    shai_env: str = "dev"
+    log_level: str = "INFO"
 
     database_url: str = "postgresql://shai:shai@localhost:5432/shai"
 
@@ -24,7 +30,7 @@ class Settings(BaseSettings):
 
     # Secret for signing OAuth state + encrypting stored tokens at rest.
     # Override in every real environment.
-    shai_secret_key: str = "dev-insecure-change-me"
+    shai_secret_key: str = DEFAULT_SECRET
 
     # Clerk. Without keys, the API resolves the single dev tenant/user below.
     clerk_secret_key: str = ""
@@ -45,6 +51,20 @@ class Settings(BaseSettings):
     @property
     def has_claude(self) -> bool:
         return bool(self.anthropic_api_key)
+
+    @property
+    def is_prod(self) -> bool:
+        return self.shai_env.lower() in ("prod", "production")
+
+    def problems(self) -> list[str]:
+        """Security-critical misconfigurations. Enforced (fatal) only in prod."""
+        issues: list[str] = []
+        if self.is_prod:
+            if not self.shai_secret_key or self.shai_secret_key == DEFAULT_SECRET:
+                issues.append("SHAI_SECRET_KEY must be set to a strong, non-default value")
+            if self.clerk_secret_key and not self.clerk_issuer:
+                issues.append("CLERK_ISSUER must be set when Clerk is enabled")
+        return issues
 
 
 settings = Settings()

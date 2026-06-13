@@ -339,6 +339,15 @@ def upsert_calendar_event(ctx: RequestContext, google_id: str, title: str,
     )
 
 
+# ---- Audit log (viewer) ----------------------------------------------------
+def list_audit(ctx: RequestContext, limit: int = 100) -> list[dict] | None:
+    return _fetch(
+        "SELECT actor, action, detail, created_at FROM audit_log "
+        "WHERE tenant_id=%s ORDER BY created_at DESC LIMIT %s",
+        (ctx.tenant_id, limit),
+    )
+
+
 # ---- Brief snapshots (nightly cron) ---------------------------------------
 def create_brief_snapshot(ctx: RequestContext, eod: bool, headline: str | None,
                           payload: dict) -> dict | None:

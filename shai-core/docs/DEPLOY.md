@@ -53,6 +53,15 @@ env vars in [`.env.example`](../.env.example).
 extension, the `CREATE EXTENSION` line is skipped harmlessly. Run it standalone
 with `python -m app.migrate`.
 
+## Production config guard
+
+Set `SHAI_ENV=prod`. The API then **refuses to start** if `SHAI_SECRET_KEY` is
+missing/default or if Clerk is enabled (`CLERK_SECRET_KEY`) without
+`CLERK_ISSUER` — failing closed rather than running insecurely. Logs are emitted
+as structured JSON (one object per line; set `LOG_LEVEL`), and every response
+carries an `X-Request-ID`. Recorded actions are viewable (tenant-scoped) at
+`GET /audit`.
+
 ## Single-user vs. multi-tenant
 
 The seed creates one tenant + the dev profile, which single-user mode resolves

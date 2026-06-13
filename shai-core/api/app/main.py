@@ -7,6 +7,9 @@ immediately runnable.
 
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,12 +17,30 @@ from . import __version__, google
 from .config import settings
 from .db import db_available
 from .modules.registry import available_modules
-from .routers import ask, brief, inbox, initiatives, insights, notebook, profile, tasks
+from .observability import RequestLogMiddleware, configure_logging
+from .routers import ask, audit, brief, inbox, initiatives, insights, notebook, profile, tasks
 from .routers import google as google_router
 
-app = FastAPI(title="SHAI Core", version=__version__,
+log = logging.getLogger("shai")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    configure_logging(settings.log_level)
+    issues = settings.problems()
+    if issues:
+        message = "Insecure configuration: " + "; ".join(issues)
+        if settings.is_prod:
+            # Fail closed: refuse to start a misconfigured production server.
+            raise RuntimeError(message)
+        log.warning("%s (allowed in dev)", message)
+    yield
+
+
+app = FastAPI(title="SHAI Core", version=__version__, lifespan=lifespan,
               description="The domain-neutral executive operating system.")
 
+app.add_middleware(RequestLogMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -35,6 +56,7 @@ app.include_router(initiatives.router)
 app.include_router(notebook.router)
 app.include_router(ask.router)
 app.include_router(profile.router)
+app.include_router(audit.router)
 app.include_router(google_router.router)
 
 

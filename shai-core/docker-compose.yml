@@ -26,6 +26,8 @@ services:
       dockerfile: api/Dockerfile
     environment:
       DATABASE_URL: postgresql://shai:shai@db:5432/shai
+      SHAI_ENV: ${SHAI_ENV:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       SHAI_MODEL: ${SHAI_MODEL:-claude-sonnet-4-6}
       SHAI_SECRET_KEY: ${SHAI_SECRET_KEY:-dev-insecure-change-me}
