@@ -1,0 +1,19 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: shai
+      POSTGRES_PASSWORD: shai
+      POSTGRES_DB: shai
+    ports:
+      - "5432:5432"
+    volumes:
+      - shai_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shai -d shai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  shai_pgdata:
