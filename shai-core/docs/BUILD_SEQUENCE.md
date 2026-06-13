@@ -30,9 +30,10 @@ Tasks below are tagged `TODO(sprint-N)` in the code where stubs exist.
 
 ## Week 3 — Brief + tasks + loop
 - **Day 11–15:** Task agent + Tasks screen; Brief builder + home screen; risk
-  scan; EOD recap; nightly cron. *(scaffolded: `agents/brief.py`,
-  `agents/task.py`, `routers/brief.py`, `routers/tasks.py`)* — real data wiring
-  is `TODO(sprint-3)`.
+  scan; EOD recap; nightly cron. *(done: `agents/brief.py` (Claude headline +
+  real repo data), `agents/task.py` (Claude extraction), `routers/brief.py`
+  incl. `/brief/latest`, `routers/tasks.py`, and the nightly cron `app/jobs.py`
+  persisting `brief_snapshot`)*. See [OPERATIONS.md](./OPERATIONS.md).
 - **Usable by Friday:** open SHAI to a real morning brief; daily loop closes.
 
 ## Week 4 — Module pattern + initiatives + notebook

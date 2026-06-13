@@ -94,6 +94,22 @@ def test_calendar_sync_and_brief_aggregation():
     assert repo.inbox_needs_you(CTX) is not None
 
 
+def test_brief_snapshot_roundtrip():
+    created = repo.create_brief_snapshot(CTX, True, f"recap-{_tag()}", {"eod": True, "priorities": []})
+    assert created and created["eod"] is True
+    latest = repo.latest_brief_snapshot(CTX, eod=True)
+    assert latest is not None and isinstance(latest["headline"], str)
+
+
+def test_cron_persists_a_brief():
+    from app import jobs
+
+    n = jobs.run_daily_brief(eod=False)
+    assert n >= 1  # at least the seeded dev user
+    snap = repo.latest_brief_snapshot(CTX, eod=False)
+    assert snap is not None and "payload" in snap
+
+
 def test_get_or_create_user_by_clerk_is_idempotent():
     clerk_id = f"user_{_tag()}"
     first = repo.get_or_create_user_by_clerk(clerk_id, settings.shai_dev_tenant_id, "Test User")

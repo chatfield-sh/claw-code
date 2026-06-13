@@ -207,6 +207,40 @@ def upsert_calendar_event(ctx: RequestContext, google_id: str, title: str,
     )
 
 
+# ---- Brief snapshots (nightly cron) ---------------------------------------
+def create_brief_snapshot(ctx: RequestContext, eod: bool, headline: str | None,
+                          payload: dict) -> dict | None:
+    return _one(
+        """
+        INSERT INTO brief_snapshot (tenant_id, user_id, eod, headline, payload)
+        VALUES (%s, %s, %s, %s, %s) RETURNING *
+        """,
+        (ctx.tenant_id, ctx.user_id, eod, headline, json.dumps(payload, default=str)),
+    )
+
+
+def latest_brief_snapshot(ctx: RequestContext, eod: bool | None = None) -> dict | None:
+    if eod is None:
+        return _one(
+            "SELECT * FROM brief_snapshot WHERE tenant_id=%s AND user_id=%s "
+            "ORDER BY created_at DESC LIMIT 1",
+            (ctx.tenant_id, ctx.user_id),
+        )
+    return _one(
+        "SELECT * FROM brief_snapshot WHERE tenant_id=%s AND user_id=%s AND eod=%s "
+        "ORDER BY created_at DESC LIMIT 1",
+        (ctx.tenant_id, ctx.user_id, eod),
+    )
+
+
+def all_active_user_contexts() -> list[dict] | None:
+    """Every (tenant_id, user_id, profile) — used by the cron to fan out."""
+    return _fetch(
+        "SELECT id AS user_id, tenant_id, role, goals, comms_style FROM user_profile",
+        (),
+    )
+
+
 # ---- Brief aggregation ----------------------------------------------------
 def open_risks(ctx: RequestContext) -> list[dict] | None:
     return _fetch(
