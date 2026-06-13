@@ -13,6 +13,8 @@ import logging
 
 import httpx
 
+from .config import settings
+
 try:
     import jwt
     from jwt import PyJWKClient
@@ -46,21 +48,32 @@ def _client_for(issuer: str) -> "PyJWKClient | None":
 
 
 def verify_clerk_token(token: str) -> dict | None:
-    """Return verified claims (incl. ``sub``) or None."""
+    """Return verified claims (incl. ``sub``) or None.
+
+    The expected issuer is PINNED to ``settings.clerk_issuer``: tokens with a
+    different ``iss`` are rejected, and JWKS is fetched only from the pinned
+    issuer — never from a value taken from the (untrusted) token. Without a
+    configured issuer we refuse to verify (fail closed).
+    """
     if jwt is None or PyJWKClient is None:
         log.debug("PyJWT not installed; cannot verify Clerk token")
         return None
-    issuer = _issuer_of(token)
-    if not issuer:
+    expected_issuer = settings.clerk_issuer.rstrip("/")
+    if not expected_issuer:
+        log.warning("CLERK_ISSUER not set; refusing to verify tokens")
         return None
-    client = _client_for(issuer)
+    # The token's self-asserted issuer must match the pinned one before we
+    # trust anything else about it (including which keys to verify against).
+    if _issuer_of(token) != expected_issuer:
+        return None
+    client = _client_for(expected_issuer)
     if client is None:
         return None
     try:
         signing_key = client.get_signing_key_from_jwt(token).key
         return jwt.decode(
-            token, signing_key, algorithms=["RS256"], issuer=issuer,
-            options={"verify_aud": False},
+            token, signing_key, algorithms=["RS256"], issuer=expected_issuer,
+            options={"require": ["exp", "iss", "sub"]},
         )
     except Exception as exc:  # noqa: BLE001 - any failure => unauthenticated
         log.info("Clerk token rejected: %s", exc)

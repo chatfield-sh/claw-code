@@ -16,6 +16,13 @@ def test_get_profile_shape():
 
 
 def test_update_profile_returns_shape():
-    r = client.put("/profile", json={"role": "operator"})
-    assert r.status_code == 200
-    assert "role" in r.json() and "goals" in r.json()
+    original = client.get("/profile").json()  # restore after, to avoid polluting
+    try:
+        r = client.put("/profile", json={"role": "operator"})
+        assert r.status_code == 200
+        assert "role" in r.json() and "goals" in r.json()
+    finally:
+        client.put("/profile", json={
+            "name": original.get("name"), "role": original.get("role"),
+            "goals": original.get("goals"), "comms_style": original.get("comms_style"),
+        })

@@ -36,6 +36,18 @@ def _one(sql: str, params: tuple) -> dict | None:
 
 
 # ---- Identity (used by the tenant seam) -----------------------------------
+def get_or_create_tenant(tenant_id: str, name: str) -> dict | None:
+    """Ensure a tenant row exists (one per Clerk org/user). None if DB is down."""
+    existing = _one("SELECT * FROM tenant WHERE id=%s", (tenant_id,))
+    if existing:
+        return existing
+    return _one(
+        "INSERT INTO tenant (id, name) VALUES (%s, %s) "
+        "ON CONFLICT (id) DO NOTHING RETURNING *",
+        (tenant_id, name),
+    )
+
+
 def get_or_create_user_by_clerk(clerk_id: str, tenant_id: str, name: str) -> dict | None:
     """Resolve a Clerk subject to a user_profile, provisioning on first sight.
 

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
 
     # Clerk. Without keys, the API resolves the single dev tenant/user below.
     clerk_secret_key: str = ""
+    # The ONLY trusted token issuer. Tokens whose `iss` differs are rejected, and
+    # JWKS is fetched only from here — never from a value inside the token.
+    # e.g. https://<instance>.clerk.accounts.dev  (required when Clerk is enabled)
+    clerk_issuer: str = ""
 
     # Google connectors (optional in the scaffold).
     google_client_id: str = ""

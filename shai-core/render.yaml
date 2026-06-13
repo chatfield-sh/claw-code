@@ -25,8 +25,12 @@ services:
         value: claude-sonnet-4-6
       - key: ANTHROPIC_API_KEY
         sync: false   # set in the Render dashboard
+      - key: SHAI_SECRET_KEY
+        generateValue: true   # signs OAuth state + encrypts stored tokens
       - key: CLERK_SECRET_KEY
         sync: false
+      - key: CLERK_ISSUER
+        sync: false   # required when Clerk is enabled (pinned token issuer)
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET

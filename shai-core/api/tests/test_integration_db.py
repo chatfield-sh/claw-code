@@ -183,6 +183,14 @@ def test_migrate_is_idempotent():
     assert seed_count == 2
 
 
+def test_get_or_create_tenant_is_idempotent():
+    tid = str(uuid.uuid4())
+    first = repo.get_or_create_tenant(tid, "Acme")
+    assert first and str(first["id"]) == tid
+    second = repo.get_or_create_tenant(tid, "Acme")
+    assert second and str(second["id"]) == tid
+
+
 def test_get_or_create_user_by_clerk_is_idempotent():
     clerk_id = f"user_{_tag()}"
     first = repo.get_or_create_user_by_clerk(clerk_id, settings.shai_dev_tenant_id, "Test User")
