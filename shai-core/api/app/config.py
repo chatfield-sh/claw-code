@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     shai_model: str = "claude-sonnet-4-6"
 
+    # Secret for signing OAuth state + encrypting stored tokens at rest.
+    # Override in every real environment.
+    shai_secret_key: str = "dev-insecure-change-me"
+
     # Clerk. Without keys, the API resolves the single dev tenant/user below.
     clerk_secret_key: str = ""
 

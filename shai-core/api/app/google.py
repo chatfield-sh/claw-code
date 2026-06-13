@@ -74,6 +74,51 @@ def exchange_code(code: str) -> dict:
     return resp.json()
 
 
+def refresh_access_token(refresh_token: str) -> dict:
+    """Exchange a refresh token for a fresh access token."""
+    _require_configured()
+    resp = httpx.post(TOKEN_URI, data={
+        "refresh_token": refresh_token,
+        "client_id": settings.google_client_id,
+        "client_secret": settings.google_client_secret,
+        "grant_type": "refresh_token",
+    }, timeout=15)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def access_token_for(ctx) -> str | None:
+    """Return a valid access token for the user, refreshing if near expiry.
+
+    Refreshed tokens are persisted (re-encrypted) so the next call is cheap.
+    Returns None if the user has not connected Google.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from . import repo
+
+    cred = repo.get_google_credential(ctx)
+    if not cred:
+        return None
+
+    expires_at = cred.get("expires_at")
+    refresh_token = cred.get("refresh_token")
+    near_expiry = bool(
+        expires_at and expires_at <= datetime.now(timezone.utc) + timedelta(seconds=60)
+    )
+    if near_expiry and refresh_token and is_configured():
+        tokens = refresh_access_token(refresh_token)
+        new_expiry = None
+        if tokens.get("expires_in"):
+            new_expiry = datetime.now(timezone.utc) + timedelta(seconds=int(tokens["expires_in"]))
+        repo.store_google_credential(
+            ctx, tokens["access_token"], tokens.get("refresh_token"),
+            tokens.get("scope") or cred.get("scope"), new_expiry,
+        )
+        return tokens["access_token"]
+    return cred["access_token"]
+
+
 def _headers(access_token: str) -> dict:
     return {"Authorization": f"Bearer {access_token}"}
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from .. import google, repo
+from .. import google
 from ..agents.email import EmailAgent
 from ..deps import RequestContext, get_current_user
 
@@ -31,12 +31,12 @@ def draft(payload: dict, ctx: RequestContext = Depends(get_current_user)) -> dic
 
     # Push to Gmail Drafts if connected; otherwise stage in the response.
     pushed = None
-    cred = repo.get_google_credential(ctx)
-    if cred and google.is_configured():
+    if google.is_configured():
         try:
-            gmail_draft = google.create_draft(cred["access_token"], sender,
-                                              f"Re: {subject}", body)
-            pushed = gmail_draft.get("id")
+            token = google.access_token_for(ctx)  # auto-refreshes if expired
+            if token:
+                gmail_draft = google.create_draft(token, sender, f"Re: {subject}", body)
+                pushed = gmail_draft.get("id")
         except Exception:  # noqa: BLE001 - staging still succeeds if push fails
             pushed = None
 

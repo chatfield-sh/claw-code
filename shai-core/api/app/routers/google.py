@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from .. import google, repo
+from .. import google, repo, security
 from ..deps import RequestContext, get_current_user
 
 router = APIRouter(prefix="/google", tags=["google"])
@@ -21,17 +21,20 @@ def status(ctx: RequestContext = Depends(get_current_user)) -> dict:
 
 
 @router.get("/auth")
-def auth() -> dict:
-    """Return the consent URL the user should visit to connect Google."""
+def auth(ctx: RequestContext = Depends(get_current_user)) -> dict:
+    """Return the consent URL, carrying a signed state for CSRF protection."""
     try:
-        return {"url": google.auth_url()}
+        state = security.sign_state({"uid": ctx.user_id})
+        return {"url": google.auth_url(state)}
     except google.GoogleNotConfigured as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/callback")
-def callback(code: str, ctx: RequestContext = Depends(get_current_user)) -> dict:
-    """OAuth redirect target: exchange the code and store the tokens."""
+def callback(code: str, state: str = "", ctx: RequestContext = Depends(get_current_user)) -> dict:
+    """OAuth redirect target: verify state, exchange the code, store the tokens."""
+    if not security.verify_state(state):
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state.")
     try:
         tokens = google.exchange_code(code)
     except google.GoogleNotConfigured as exc:
@@ -49,10 +52,10 @@ def callback(code: str, ctx: RequestContext = Depends(get_current_user)) -> dict
 @router.post("/calendar/sync")
 def calendar_sync(ctx: RequestContext = Depends(get_current_user)) -> dict:
     """Pull primary-calendar events into calendar_event (tenant-scoped)."""
-    cred = repo.get_google_credential(ctx)
-    if not cred:
+    token = google.access_token_for(ctx)
+    if not token:
         raise HTTPException(status_code=400, detail="Google not connected for this user.")
-    events = google.list_calendar_events(cred["access_token"])
+    events = google.list_calendar_events(token)
     synced = 0
     for ev in events:
         start = (ev.get("start") or {}).get("dateTime") or (ev.get("start") or {}).get("date")

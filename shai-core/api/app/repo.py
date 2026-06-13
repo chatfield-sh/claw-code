@@ -13,6 +13,7 @@ import json
 import logging
 from typing import Any
 
+from . import security
 from .db import get_conn
 from .deps import RequestContext
 
@@ -173,7 +174,8 @@ def create_module_insight(ctx: RequestContext, module_record_id: str, module_key
 def store_google_credential(ctx: RequestContext, access_token: str,
                             refresh_token: str | None, scope: str | None,
                             expires_at: Any) -> dict | None:
-    return _one(
+    # Tokens are encrypted at rest; the DB never holds plaintext.
+    row = _one(
         """
         INSERT INTO google_credential
             (tenant_id, user_id, access_token, refresh_token, scope, expires_at)
@@ -184,15 +186,28 @@ def store_google_credential(ctx: RequestContext, access_token: str,
             scope=EXCLUDED.scope, expires_at=EXCLUDED.expires_at, updated_at=now()
         RETURNING *
         """,
-        (ctx.tenant_id, ctx.user_id, access_token, refresh_token, scope, expires_at),
+        (ctx.tenant_id, ctx.user_id, security.encrypt(access_token),
+         security.encrypt(refresh_token), scope, expires_at),
     )
+    return _decrypt_credential(row)
 
 
 def get_google_credential(ctx: RequestContext) -> dict | None:
-    return _one(
+    row = _one(
         "SELECT * FROM google_credential WHERE tenant_id=%s AND user_id=%s",
         (ctx.tenant_id, ctx.user_id),
     )
+    return _decrypt_credential(row)
+
+
+def _decrypt_credential(row: dict | None) -> dict | None:
+    """Return the row with token columns decrypted for use by the caller."""
+    if not row:
+        return row
+    row = dict(row)
+    row["access_token"] = security.decrypt(row.get("access_token"))
+    row["refresh_token"] = security.decrypt(row.get("refresh_token"))
+    return row
 
 
 def upsert_calendar_event(ctx: RequestContext, google_id: str, title: str,
