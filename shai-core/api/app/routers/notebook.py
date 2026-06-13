@@ -1,9 +1,10 @@
-"""Screen 6: Notebook — meetings + knowledge (process notes, ask-your-knowledge)."""
+"""Screen 6: Notebook — meetings + knowledge (persisted; recall via text search)."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
+from .. import repo
 from ..agents.knowledge import KnowledgeAgent
 from ..agents.meeting import MeetingAgent
 from ..deps import RequestContext, get_current_user
@@ -15,7 +16,20 @@ _knowledge = KnowledgeAgent()
 
 @router.post("/meeting")
 def process_meeting(payload: dict, ctx: RequestContext = Depends(get_current_user)) -> dict:
-    return _meeting.process(ctx, payload.get("notes", ""))
+    notes = payload.get("notes", "")
+    result = _meeting.process(ctx, notes)
+    repo.create_meeting(
+        ctx, payload.get("title", "Untitled meeting"), notes,
+        result.get("summary"), result.get("decisions", []), result.get("follow_up"),
+    )
+    return result
+
+
+@router.post("/note")
+def add_note(payload: dict, ctx: RequestContext = Depends(get_current_user)) -> dict:
+    row = repo.create_note(ctx, payload.get("body", ""), title=payload.get("title"),
+                           tags=payload.get("tags"))
+    return {"note": dict(row) if row else payload}
 
 
 @router.post("/ask")

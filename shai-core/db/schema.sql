@@ -202,6 +202,23 @@ CREATE TABLE IF NOT EXISTS memory (
 );
 
 -- ---------------------------------------------------------------------------
+-- Google OAuth credentials (per user; tokens for Gmail + Calendar)
+-- NOTE: stored as-is for the scaffold. Encrypt at rest before production.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS google_credential (
+    id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id     uuid NOT NULL REFERENCES tenant(id),
+    user_id       uuid NOT NULL REFERENCES user_profile(id),
+    access_token  text NOT NULL,
+    refresh_token text,
+    scope         text,
+    expires_at    timestamptz,
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    updated_at    timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (tenant_id, user_id)
+);
+
+-- ---------------------------------------------------------------------------
 -- Audit log (every gated action)
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS audit_log (

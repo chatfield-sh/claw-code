@@ -101,7 +101,16 @@ pytest                          # module contract + smoke tests
 
 ## Status
 
-This is an **initial scaffold** matching the spec's architecture. It stands up
-the structural seams (tenant resolution in one place, the module contract, the
-agent set, the six screens). Business logic inside the agents is intentionally
-thin and marked with `TODO(sprint-N)` against the build sequence.
+The structural seams are real and wired:
+
+- **Persistence** — tenant-scoped CRUD in `api/app/repo.py`; brief/tasks/notebook/
+  initiatives/insights read and write real rows (and degrade to empty offline).
+- **Auth** — Clerk JWT verification in `api/app/auth.py` + the tenant seam in
+  `deps.py` (dev-identity fallback when Clerk is unset).
+- **Google connectors** — OAuth + Gmail (read + compose-only drafts) + Calendar
+  read in `api/app/google.py` and `routers/google.py`. No send scope, ever.
+
+Set `ANTHROPIC_API_KEY`, `CLERK_SECRET_KEY`, and `GOOGLE_CLIENT_ID/SECRET` to
+light these up; without them the app still boots and the suite stays hermetic.
+Remaining work (embeddings, token refresh, cron, deploy) is tagged
+`TODO(sprint-N)` against [the build sequence](./docs/BUILD_SEQUENCE.md).

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .. import repo
 from ..deps import RequestContext
 from .base import Agent
 
@@ -19,10 +20,12 @@ class KnowledgeAgent(Agent):
         return None
 
     def recall(self, ctx: RequestContext, query: str, k: int = 5) -> list[dict]:
-        """Vector search over this tenant's notes.
+        """Recall over this tenant's notes.
 
-        TODO(sprint-4): `SELECT ... ORDER BY embedding <=> %s LIMIT k` filtered by
-        tenant_id. Returns [] until embeddings are wired.
+        Today: tenant-scoped text search (`repo.search_notes`), which is genuinely
+        useful without embeddings. TODO(sprint-4): swap for vector search
+        (`ORDER BY embedding <=> %s`) once `embed` populates note.embedding.
         """
         self.log(ctx, "recall", {"query": query[:120], "k": k})
-        return []
+        rows = repo.search_notes(ctx, query, k)
+        return [dict(r) for r in (rows or [])]

@@ -12,17 +12,20 @@ Tasks below are tagged `TODO(sprint-N)` in the code where stubs exist.
 - **Day 3:** 12-table schema **with `tenant_id` everywhere**; seed one tenant +
   your domain-neutral profile. *(scaffolded: `db/schema.sql`, `db/seed.sql`)*
 - **Day 4:** Orchestrator + trust gate + audit log; Claude wired; tenant
-  resolution in `get_current_user`. *(scaffolded: `agents/`, `trust.py`,
-  `audit.py`, `deps.py`)*
+  resolution in `get_current_user`. *(done: `agents/`, `trust.py`, `audit.py`,
+  `deps.py`)* — **Clerk JWT verification wired** (`auth.py`), with dev-identity
+  fallback. Remaining: set Clerk keys + production JWKS.
 - **Day 5:** Google OAuth (read + draft + calendar read); `/calendar/sync`.
-  `TODO(sprint-1)`
+  *(done: `google.py`, `routers/google.py` — `/google/auth`, `/google/callback`,
+  `/google/calendar/sync`; compose-only, no send scope)*. Remaining: set Google
+  client credentials + token refresh.
 - **Usable by Friday:** log in, see your real calendar; every query
-  tenant-scoped.
+  tenant-scoped. **Persistence layer is live** (`repo.py`, tenant-scoped CRUD).
 
 ## Week 2 — Email (the hook)
 - **Day 6–10:** Email agent triage + draft → Gmail Drafts; Inbox screen;
-  approve/edit/discard. **No send route.** *(scaffolded: `agents/email.py`,
-  `routers/inbox.py`, `web/app/inbox`)* — Gmail Drafts push is `TODO(sprint-2)`.
+  approve/edit/discard. **No send route.** *(done: `agents/email.py`,
+  `routers/inbox.py` pushes to Gmail Drafts when connected, `web/app/inbox`)*.
 - **Usable by Friday:** triage real mail, approve a SHAI draft, send from Gmail.
 
 ## Week 3 — Brief + tasks + loop
@@ -37,8 +40,9 @@ Tasks below are tagged `TODO(sprint-N)` in the code where stubs exist.
   Insights screen. *(scaffolded + tested: `modules/`, `routers/insights.py`)*
 - **Day 18:** Meeting agent + note primitive + Notebook screen. *(scaffolded:
   `agents/meeting.py`, `routers/notebook.py`)*
-- **Day 19:** Knowledge embed + ask-your-knowledge. `TODO(sprint-4)` (pgvector
-  search in `agents/knowledge.py`).
+- **Day 19:** Knowledge embed + ask-your-knowledge. *(done: tenant-scoped text
+  recall via `repo.search_notes`)*. `TODO(sprint-4)`: swap text search for
+  pgvector once `embed` populates `note.embedding`.
 - **Day 20:** Initiative agent + Initiatives screen; `/ask` routing.
   *(scaffolded: `agents/initiative.py`, `routers/initiatives.py`)*
 - **Day 21–24:** Polish all six screens; tune the generic module on real data.
