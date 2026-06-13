@@ -96,8 +96,14 @@ npm run dev                     # http://localhost:3000
 ```bash
 cd shai-core/api
 pip install -r requirements.txt
-pytest                          # module contract + smoke tests
+pytest                          # hermetic: integration tests auto-skip with no DB
 ```
+
+The persistence layer is also exercised against a **real Postgres** in CI: the
+`shai-core-ci` workflow spins up a `pgvector` service, applies `db/schema.sql` +
+`db/seed.sql`, and runs `tests/test_integration_db.py`, which round-trips every
+`repo.py` path. With a DB reachable locally (`make db-up && make db-init`) those
+tests run too; without one they skip so the default run stays hermetic.
 
 ## Status
 

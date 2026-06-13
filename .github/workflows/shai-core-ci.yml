@@ -30,6 +30,23 @@ jobs:
   lint-and-test:
     name: ruff + pytest
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: shai
+          POSTGRES_PASSWORD: shai
+          POSTGRES_DB: shai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shai -d shai"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Matches the repo.py default; makes the live-DB integration tests run.
+      DATABASE_URL: postgresql://shai:shai@localhost:5432/shai
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,7 +58,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt ruff
+      - name: Install psql client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply schema + seed
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f ../db/schema.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f ../db/seed.sql
       - name: Ruff lint
         run: ruff check .
-      - name: Pytest
+      - name: Pytest (incl. live-DB integration)
         run: pytest
