@@ -123,6 +123,37 @@ def test_email_item_upsert_dedupes_on_gmail_id():
     assert listed is not None and sum(1 for r in listed if r["gmail_id"] == gid) == 1
 
 
+def test_note_vector_recall_via_knowledge_agent():
+    from app.agents.knowledge import KnowledgeAgent
+
+    ka = KnowledgeAgent()
+    token = _tag()
+    ka.add_note(CTX, body=f"The {token} migration plan covers pgvector indexing", title="Plan")
+    hits = ka.recall(CTX, f"{token} pgvector")
+    assert any(token in h["body"] for h in hits)
+
+
+def test_memory_search_roundtrip():
+    from app import embeddings
+
+    token = _tag()
+    repo.add_memory(CTX, "semantic", f"remember {token}: launch is in May",
+                    embedding=embeddings.embed_text(f"{token} launch May"))
+    rows = repo.search_memory(CTX, embeddings.embed_text(f"{token} launch"))
+    assert rows is not None and any(token in r["content"] for r in rows)
+
+
+def test_ask_pulls_from_notes():
+    from app.agents import Orchestrator
+    from app.agents.knowledge import KnowledgeAgent
+
+    token = _tag()
+    KnowledgeAgent().add_note(CTX, body=f"{token} board meeting moved to Friday", title="Board")
+    res = Orchestrator().answer(CTX, f"{token} board meeting")
+    assert res["sources"]["notes"]  # recalled via pgvector
+    assert any(token in n["body"] for n in res["sources"]["notes"])
+
+
 def test_migrate_is_idempotent():
     from app import migrate
 

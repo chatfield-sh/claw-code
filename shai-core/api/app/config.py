@@ -14,6 +14,14 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     shai_model: str = "claude-sonnet-4-6"
 
+    # Embeddings (Claude has no embeddings API). OpenAI-compatible endpoint;
+    # without a key, a deterministic local fallback keeps recall working.
+    # The model must emit 1536-dim vectors to match the schema (vector(1536)),
+    # e.g. OpenAI text-embedding-3-small.
+    embed_api_key: str = ""
+    embed_api_base: str = "https://api.openai.com/v1"
+    embed_model: str = "text-embedding-3-small"
+
     # Secret for signing OAuth state + encrypting stored tokens at rest.
     # Override in every real environment.
     shai_secret_key: str = "dev-insecure-change-me"

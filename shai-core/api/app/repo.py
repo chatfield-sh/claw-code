@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Any
 
-from . import security
+from . import embeddings, security
 from .db import get_conn
 from .deps import RequestContext
 
@@ -90,18 +90,20 @@ def set_task_status(ctx: RequestContext, task_id: str, status: str) -> dict | No
 
 # ---- Notes / knowledge ----------------------------------------------------
 def create_note(ctx: RequestContext, body: str, title: str | None = None,
-                tags: list[str] | None = None) -> dict | None:
+                tags: list[str] | None = None,
+                embedding: list[float] | None = None) -> dict | None:
+    vec = embeddings.to_pgvector(embedding) if embedding else None
     return _one(
         """
-        INSERT INTO note (tenant_id, user_id, title, body, tags)
-        VALUES (%s, %s, %s, %s, %s) RETURNING *
+        INSERT INTO note (tenant_id, user_id, title, body, tags, embedding)
+        VALUES (%s, %s, %s, %s, %s, %s::vector) RETURNING *
         """,
-        (ctx.tenant_id, ctx.user_id, title, body, tags or []),
+        (ctx.tenant_id, ctx.user_id, title, body, tags or [], vec),
     )
 
 
 def search_notes(ctx: RequestContext, query: str, k: int = 5) -> list[dict] | None:
-    """Text search fallback until embeddings land (sprint-4). Tenant-scoped."""
+    """Text search. Tenant-scoped. Used as a recall fallback."""
     return _fetch(
         """
         SELECT id, title, body, tags FROM note
@@ -109,6 +111,54 @@ def search_notes(ctx: RequestContext, query: str, k: int = 5) -> list[dict] | No
         ORDER BY created_at DESC LIMIT %s
         """,
         (ctx.tenant_id, f"%{query}%", f"%{query}%", k),
+    )
+
+
+def search_notes_vector(ctx: RequestContext, embedding: list[float],
+                        k: int = 5) -> list[dict] | None:
+    """Semantic recall over this tenant's embedded notes (pgvector cosine)."""
+    return _fetch(
+        """
+        SELECT id, title, body, tags FROM note
+        WHERE tenant_id=%s AND embedding IS NOT NULL
+        ORDER BY embedding <=> %s::vector LIMIT %s
+        """,
+        (ctx.tenant_id, embeddings.to_pgvector(embedding), k),
+    )
+
+
+# ---- Memory (4 tiers, embedded) -------------------------------------------
+def add_memory(ctx: RequestContext, tier: str, content: str,
+               embedding: list[float] | None = None) -> dict | None:
+    vec = embeddings.to_pgvector(embedding) if embedding else None
+    return _one(
+        """
+        INSERT INTO memory (tenant_id, user_id, tier, content, embedding)
+        VALUES (%s, %s, %s, %s, %s::vector) RETURNING *
+        """,
+        (ctx.tenant_id, ctx.user_id, tier, content, vec),
+    )
+
+
+def search_memory(ctx: RequestContext, embedding: list[float], k: int = 5,
+                  tiers: tuple[str, ...] | None = None) -> list[dict] | None:
+    """Semantic recall over this tenant's memory, optionally filtered by tier."""
+    if tiers:
+        return _fetch(
+            """
+            SELECT id, tier, content FROM memory
+            WHERE tenant_id=%s AND embedding IS NOT NULL AND tier = ANY(%s)
+            ORDER BY embedding <=> %s::vector LIMIT %s
+            """,
+            (ctx.tenant_id, list(tiers), embeddings.to_pgvector(embedding), k),
+        )
+    return _fetch(
+        """
+        SELECT id, tier, content FROM memory
+        WHERE tenant_id=%s AND embedding IS NOT NULL
+        ORDER BY embedding <=> %s::vector LIMIT %s
+        """,
+        (ctx.tenant_id, embeddings.to_pgvector(embedding), k),
     )
 
 

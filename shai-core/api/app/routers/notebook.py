@@ -1,10 +1,10 @@
-"""Screen 6: Notebook — meetings + knowledge (persisted; recall via text search)."""
+"""Screen 6: Notebook — meetings + knowledge (embedded; recall via pgvector)."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 
-from .. import repo
+from .. import embeddings, repo
 from ..agents.knowledge import KnowledgeAgent
 from ..agents.meeting import MeetingAgent
 from ..deps import RequestContext, get_current_user
@@ -18,18 +18,26 @@ _knowledge = KnowledgeAgent()
 def process_meeting(payload: dict, ctx: RequestContext = Depends(get_current_user)) -> dict:
     notes = payload.get("notes", "")
     result = _meeting.process(ctx, notes)
+    title = payload.get("title", "Untitled meeting")
     repo.create_meeting(
-        ctx, payload.get("title", "Untitled meeting"), notes,
-        result.get("summary"), result.get("decisions", []), result.get("follow_up"),
+        ctx, title, notes, result.get("summary"),
+        result.get("decisions", []), result.get("follow_up"),
     )
+    # Lay down an episodic memory of the meeting summary.
+    summary = result.get("summary") or notes[:280]
+    repo.add_memory(ctx, "episodic", f"Meeting '{title}': {summary}",
+                    embedding=embeddings.embed_text(summary))
     return result
 
 
 @router.post("/note")
 def add_note(payload: dict, ctx: RequestContext = Depends(get_current_user)) -> dict:
-    row = repo.create_note(ctx, payload.get("body", ""), title=payload.get("title"),
-                           tags=payload.get("tags"))
-    return {"note": dict(row) if row else payload}
+    note = _knowledge.add_note(ctx, payload.get("body", ""), title=payload.get("title"),
+                               tags=payload.get("tags"))
+    if not note:
+        return {"note": payload}
+    row = {k: v for k, v in dict(note).items() if k != "embedding"}  # don't echo the vector
+    return {"note": row}
 
 
 @router.post("/ask")

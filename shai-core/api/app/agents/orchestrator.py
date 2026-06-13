@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from enum import Enum
 
+from .. import embeddings, repo
 from ..audit import record
+from ..claude import complete
 from ..deps import RequestContext
 from .brief import BriefAgent
 from .email import EmailAgent
@@ -67,3 +69,40 @@ class Orchestrator:
         intent = self.classify(text)
         record(ctx, self.name, "route", {"intent": intent.value})
         return intent
+
+    def retrieve_memory(self, ctx: RequestContext, query: str, k: int = 5) -> list[str]:
+        """Semantic recall over the user's memory tiers (for prompt enrichment)."""
+        rows = repo.search_memory(ctx, embeddings.embed_text(query), k)
+        return [r["content"] for r in (rows or [])]
+
+    def answer(self, ctx: RequestContext, query: str) -> dict:
+        """End-to-end /ask: classify, retrieve memory + notes, compose an answer.
+
+        This is where memory is retrieved *into the prompt*: recalled notes and
+        memories become Claude's context. Falls back to returning the recalled
+        snippets when Claude is unavailable.
+        """
+        intent = self.route(ctx, query)
+        notes = self.knowledge.recall(ctx, query)
+        memory = self.retrieve_memory(ctx, query)
+        context = "\n".join(
+            [f"- {m}" for m in memory] + [f"- {n.get('body', '')}" for n in notes]
+        )
+        out = complete(
+            ctx,
+            system=(
+                "Answer the user's question using ONLY the provided context from "
+                "their notes and memory. If the context is empty or insufficient, "
+                "say so plainly. Be concise."
+            ),
+            user=f"Question: {query}\n\nContext:\n{context or '(none)'}",
+            max_tokens=500,
+        )
+        answer = out or (
+            "Here's what I found in your notes/memory:\n" + (context or "(nothing relevant)")
+        )
+        return {
+            "intent": intent.value,
+            "answer": answer,
+            "sources": {"notes": notes, "memory": memory},
+        }

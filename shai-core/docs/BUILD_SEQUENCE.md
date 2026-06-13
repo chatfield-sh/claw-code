@@ -43,9 +43,10 @@ Tasks below are tagged `TODO(sprint-N)` in the code where stubs exist.
   Insights screen. *(scaffolded + tested: `modules/`, `routers/insights.py`)*
 - **Day 18:** Meeting agent + note primitive + Notebook screen. *(scaffolded:
   `agents/meeting.py`, `routers/notebook.py`)*
-- **Day 19:** Knowledge embed + ask-your-knowledge. *(done: tenant-scoped text
-  recall via `repo.search_notes`)*. `TODO(sprint-4)`: swap text search for
-  pgvector once `embed` populates `note.embedding`.
+- **Day 19:** Knowledge embed + ask-your-knowledge. *(done: notes embedded on
+  write (`embeddings.py`, pluggable provider + local fallback), pgvector cosine
+  recall, 4-tier `memory` populated from notes/meetings, and a top-level `/ask`
+  that retrieves memory + notes into the prompt via the orchestrator)*.
 - **Day 20:** Initiative agent + Initiatives screen; `/ask` routing.
   *(scaffolded: `agents/initiative.py`, `routers/initiatives.py`)*
 - **Day 21–24:** Polish all six screens; tune the generic module on real data.
