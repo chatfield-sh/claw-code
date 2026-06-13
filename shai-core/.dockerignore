@@ -1,0 +1,15 @@
+# Build context for the API image is this directory (shai-core/).
+# Keep it small: exclude the web app, virtualenvs, caches, and secrets.
+web/
+api/.venv/
+api/tests/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/node_modules/
+**/.next/
+.env
+*.local
+.git/

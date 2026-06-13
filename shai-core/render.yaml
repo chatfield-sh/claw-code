@@ -1,0 +1,48 @@
+# Render blueprint — one managed deploy of SHAI Core (api + web + Postgres).
+# When shai-core/ becomes its own repo, this sits at the repo root and the
+# rootDir lines can be dropped. Until then, point Render's blueprint at this
+# file. Docs: https://render.com/docs/blueprint-spec
+databases:
+  - name: shai-db
+    postgresMajorVersion: "16"
+    plan: free
+    # pgvector is available on Render Postgres; the migrate step enables it.
+
+services:
+  - type: web
+    name: shai-api
+    runtime: docker
+    rootDir: shai-core
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shai-db
+          property: connectionString
+      - key: SHAI_MODEL
+        value: claude-sonnet-4-6
+      - key: ANTHROPIC_API_KEY
+        sync: false   # set in the Render dashboard
+      - key: SHAI_SECRET_KEY
+        generateValue: true   # signs OAuth state + encrypts stored tokens
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_ISSUER
+        sync: false   # required when Clerk is enabled (pinned token issuer)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+  - type: web
+    name: shai-web
+    runtime: docker
+    rootDir: shai-core
+    dockerfilePath: ./web/Dockerfile
+    dockerContext: ./web
+    envVars:
+      # Inlined at build time. Set to the shai-api URL once it is provisioned.
+      - key: NEXT_PUBLIC_API_BASE
+        sync: false

@@ -1,0 +1,57 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: shai
+      POSTGRES_PASSWORD: shai
+      POSTGRES_DB: shai
+    ports:
+      - "5432:5432"
+    volumes:
+      - shai_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shai -d shai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Full stack (api + web) lives behind the "full" profile so the default
+  #   docker compose up -d db
+  # still starts only the database. Run the whole stack with:
+  #   docker compose --profile full up --build
+  api:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://shai:shai@db:5432/shai
+      SHAI_ENV: ${SHAI_ENV:-dev}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SHAI_MODEL: ${SHAI_MODEL:-claude-sonnet-4-6}
+      SHAI_SECRET_KEY: ${SHAI_SECRET_KEY:-dev-insecure-change-me}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      CLERK_ISSUER: ${CLERK_ISSUER:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    profiles: ["full"]
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  shai_pgdata:
