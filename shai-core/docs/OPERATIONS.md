@@ -28,6 +28,17 @@ stake) and primary-calendar events into `calendar_event`, for every connected
 user. It is a no-op when Google is not configured/connected, so it is safe to
 schedule unconditionally. On demand: `POST /inbox/sync`, `POST /google/calendar/sync`.
 
+The morning brief job also runs a **risk scan** first (overdue/blocked tasks,
+unanswered high-stake email) which populates the risk radar. On demand:
+`POST /risks/scan`; view with `GET /risks`.
+
+## Evals
+
+`python -m evals` runs the agent eval suite (`api/evals/`) — structural property
+checks that pass deterministically offline, plus an LLM-judge case that grades
+real Claude output when `ANTHROPIC_API_KEY` is set (skipped otherwise). The same
+suite is exercised in CI via `tests/test_risks.py::test_all_evals_pass`.
+
 Fetch the latest generated brief over HTTP:
 
 ```

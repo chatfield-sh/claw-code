@@ -18,7 +18,9 @@ from .config import settings
 from .db import db_available
 from .modules.registry import available_modules
 from .observability import RequestLogMiddleware, configure_logging
-from .routers import ask, audit, brief, inbox, initiatives, insights, notebook, profile, tasks
+from .routers import (
+    ask, audit, brief, inbox, initiatives, insights, notebook, profile, risks, tasks,
+)
 from .routers import google as google_router
 
 log = logging.getLogger("shai")
@@ -57,6 +59,7 @@ app.include_router(notebook.router)
 app.include_router(ask.router)
 app.include_router(profile.router)
 app.include_router(audit.router)
+app.include_router(risks.router)
 app.include_router(google_router.router)
 
 

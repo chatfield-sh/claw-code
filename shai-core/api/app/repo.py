@@ -383,6 +383,23 @@ def all_active_user_contexts() -> list[dict] | None:
 
 
 # ---- Brief aggregation ----------------------------------------------------
+def create_risk_item(ctx: RequestContext, title: str, severity: str = "amber",
+                     detail: str | None = None) -> dict | None:
+    """Create a risk, deduped on an open risk with the same title."""
+    return _one(
+        """
+        INSERT INTO risk_item (tenant_id, user_id, title, severity, detail)
+        SELECT %s, %s, %s, %s, %s
+        WHERE NOT EXISTS (
+            SELECT 1 FROM risk_item
+            WHERE tenant_id=%s AND title=%s AND resolved=false
+        )
+        RETURNING *
+        """,
+        (ctx.tenant_id, ctx.user_id, title, severity, detail, ctx.tenant_id, title),
+    )
+
+
 def open_risks(ctx: RequestContext) -> list[dict] | None:
     return _fetch(
         "SELECT title, severity FROM risk_item WHERE tenant_id=%s AND resolved=false "

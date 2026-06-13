@@ -21,11 +21,13 @@ import sys
 
 from . import ingest, repo
 from .agents.brief import BriefAgent
+from .agents.risk import RiskAgent
 from .audit import record
 from .config import settings
 from .deps import RequestContext
 
 _brief = BriefAgent()
+_risk = RiskAgent()
 
 
 def _contexts() -> list[RequestContext]:
@@ -55,6 +57,8 @@ def run_daily_brief(eod: bool = False) -> int:
     """Generate + persist a brief for every active user. Returns the count."""
     count = 0
     for ctx in _contexts():
+        if not eod:
+            _risk.scan(ctx)  # refresh the risk radar before the morning brief
         brief = _brief.build(ctx, eod=eod)
         repo.create_brief_snapshot(ctx, eod, brief.headline, brief.model_dump())
         record(ctx, "cron", "daily_brief", {"eod": eod})

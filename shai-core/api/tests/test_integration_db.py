@@ -172,6 +172,28 @@ def test_profile_update_drives_dev_context():
         )
 
 
+def test_risk_scan_generates_and_dedupes():
+    from app.agents.risk import RiskAgent
+    from datetime import date, timedelta
+
+    tag = _tag()
+    # A blocked task and an overdue task should each yield a risk.
+    blocked = repo.create_task(CTX, f"blocked-{tag}", weight=10)
+    repo.set_task_status(CTX, str(blocked["id"]), "blocked")
+    repo.create_task(CTX, f"overdue-{tag}", weight=10, due=date.today() - timedelta(days=2))
+
+    agent = RiskAgent()
+    first = agent.scan(CTX)
+    assert len(first) >= 2
+    # Second scan is deduped: the same open risks are not re-created.
+    titles = {r["title"] for r in (repo.open_risks(CTX) or [])}
+    assert any(tag in t and "Blocked" in t for t in titles)
+    assert any(tag in t and "Overdue" in t for t in titles)
+    second = agent.scan(CTX)
+    new_titles = {r["title"] for r in second}
+    assert not (new_titles & titles)  # nothing duplicated
+
+
 def test_migrate_is_idempotent():
     from app import migrate
 
