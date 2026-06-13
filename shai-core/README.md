@@ -50,8 +50,10 @@ Core ships with the **generic insight module** only. Verticals are added later
   `parse` / `analyze` / `schema`.
 - **The cheap insurance:** `tenant_id` on every table from day one (dormant).
 
-See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full picture and
-[`docs/BUILD_SEQUENCE.md`](./docs/BUILD_SEQUENCE.md) for the 30-day plan.
+See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the full picture,
+[`docs/BUILD_SEQUENCE.md`](./docs/BUILD_SEQUENCE.md) for the 30-day plan,
+[`docs/OPERATIONS.md`](./docs/OPERATIONS.md) for the nightly cron + DB lifecycle,
+and [`docs/DEPLOY.md`](./docs/DEPLOY.md) for containers + managed deploy.
 
 ## Repository layout
 
@@ -85,6 +87,13 @@ The web app:
 cd shai-core/web
 npm install
 npm run dev                     # http://localhost:3000
+```
+
+Or run the whole stack in containers (db + api + web):
+
+```bash
+cd shai-core
+docker compose --profile full up --build   # web :3000 · api :8000
 ```
 
 > The API runs **offline-friendly**: with no `ANTHROPIC_API_KEY` set, the

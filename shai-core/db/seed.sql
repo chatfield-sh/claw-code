@@ -17,11 +17,19 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- A couple of generic seed rows so the screens render with content.
+-- A couple of generic seed rows so the screens render with content. Guarded by
+-- NOT EXISTS so re-running this file (e.g. the container migrate step on every
+-- start) does not duplicate them.
 INSERT INTO task (tenant_id, user_id, title, weight, status, source)
-VALUES
-    ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002',
-     'Run a real day through SHAI Core', 80, 'open', 'seed'),
-    ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002',
-     'Wire the generic module to real data', 60, 'open', 'seed')
-ON CONFLICT DO NOTHING;
+SELECT v.tenant_id, v.user_id, v.title, v.weight, 'open', 'seed'
+FROM (VALUES
+    ('00000000-0000-0000-0000-000000000001'::uuid,
+     '00000000-0000-0000-0000-000000000002'::uuid,
+     'Run a real day through SHAI Core', 80::numeric),
+    ('00000000-0000-0000-0000-000000000001'::uuid,
+     '00000000-0000-0000-0000-000000000002'::uuid,
+     'Wire the generic module to real data', 60::numeric)
+) AS v(tenant_id, user_id, title, weight)
+WHERE NOT EXISTS (
+    SELECT 1 FROM task WHERE source = 'seed' AND task.tenant_id = v.tenant_id
+);

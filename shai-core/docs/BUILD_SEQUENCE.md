@@ -8,7 +8,9 @@ Tasks below are tagged `TODO(sprint-N)` in the code where stubs exist.
 
 ## Week 1 — Foundation + tenant seam
 - **Day 1–2:** Monorepo, stack, Clerk auth, Postgres + pgvector, deploy
-  hello-world. *(scaffolded: `docker-compose.yml`, `api/`, `web/`)*
+  hello-world. *(done: `docker-compose.yml` full stack, `api/Dockerfile` +
+  `web/Dockerfile`, `render.yaml`, idempotent `app/migrate.py`. See
+  [DEPLOY.md](./DEPLOY.md))*
 - **Day 3:** 12-table schema **with `tenant_id` everywhere**; seed one tenant +
   your domain-neutral profile. *(scaffolded: `db/schema.sql`, `db/seed.sql`)*
 - **Day 4:** Orchestrator + trust gate + audit log; Claude wired; tenant

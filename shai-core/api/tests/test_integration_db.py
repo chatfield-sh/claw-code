@@ -110,6 +110,17 @@ def test_cron_persists_a_brief():
     assert snap is not None and "payload" in snap
 
 
+def test_migrate_is_idempotent():
+    from app import migrate
+
+    assert migrate.apply_all() > 0
+    assert migrate.apply_all() > 0  # second run is safe (idempotent guards)
+    # Seed tasks are NOT-EXISTS-guarded, so re-running never duplicates them.
+    rows = repo.list_tasks(CTX)
+    seed_count = sum(1 for r in (rows or []) if r.get("source") == "seed")
+    assert seed_count == 2
+
+
 def test_get_or_create_user_by_clerk_is_idempotent():
     clerk_id = f"user_{_tag()}"
     first = repo.get_or_create_user_by_clerk(clerk_id, settings.shai_dev_tenant_id, "Test User")
