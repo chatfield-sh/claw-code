@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import AuthControl from "./AuthControl";
 
-// The six-screen shell. Identical chrome across every screen; only screen 4
-// ("Insights") is module-driven.
+// The six-screen shell + Settings. Identical chrome across every screen; only
+// screen 4 ("Insights") is module-driven.
 const SCREENS = [
   { href: "/", label: "Brief" },
   { href: "/inbox", label: "Inbox" },
@@ -10,7 +11,10 @@ const SCREENS = [
   { href: "/insights", label: "Insights" },
   { href: "/initiatives", label: "Initiatives" },
   { href: "/notebook", label: "Notebook" },
+  { href: "/settings", label: "Settings" },
 ];
+
+const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default function Shell({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -26,6 +30,7 @@ export default function Shell({ title, children }: { title: string; children: Re
             </li>
           ))}
         </ul>
+        {clerkEnabled && <AuthControl />}
       </nav>
       <main style={{ flex: 1, padding: "32px 40px" }}>
         <h1 style={{ marginTop: 0 }}>{title}</h1>

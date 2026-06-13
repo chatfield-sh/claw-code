@@ -154,6 +154,24 @@ def test_ask_pulls_from_notes():
     assert any(token in n["body"] for n in res["sources"]["notes"])
 
 
+def test_profile_update_drives_dev_context():
+    import asyncio
+
+    from app.deps import get_current_user
+
+    original = repo.get_user_profile(CTX)
+    try:
+        repo.update_user_profile(CTX, role="real-estate operator", goals=["close deals"])
+        ctx = asyncio.run(get_current_user(authorization=None))
+        assert ctx.role == "real-estate operator"
+        assert "close deals" in ctx.goals
+    finally:
+        repo.update_user_profile(
+            CTX, name=original["name"], role=original["role"],
+            goals=original["goals"], comms_style=original["comms_style"],
+        )
+
+
 def test_migrate_is_idempotent():
     from app import migrate
 

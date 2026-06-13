@@ -14,7 +14,7 @@ from . import __version__, google
 from .config import settings
 from .db import db_available
 from .modules.registry import available_modules
-from .routers import ask, brief, inbox, initiatives, insights, notebook, tasks
+from .routers import ask, brief, inbox, initiatives, insights, notebook, profile, tasks
 from .routers import google as google_router
 
 app = FastAPI(title="SHAI Core", version=__version__,
@@ -34,6 +34,7 @@ app.include_router(insights.router)
 app.include_router(initiatives.router)
 app.include_router(notebook.router)
 app.include_router(ask.router)
+app.include_router(profile.router)
 app.include_router(google_router.router)
 
 

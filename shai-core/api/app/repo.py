@@ -57,6 +57,34 @@ def get_or_create_user_by_clerk(clerk_id: str, tenant_id: str, name: str) -> dic
     )
 
 
+# ---- Profile (role/goals/comms drive role-aware prompting) -----------------
+def get_user_profile(ctx: RequestContext) -> dict | None:
+    return _one(
+        "SELECT id, tenant_id, name, role, goals, comms_style FROM user_profile "
+        "WHERE id=%s AND tenant_id=%s",
+        (ctx.user_id, ctx.tenant_id),
+    )
+
+
+def update_user_profile(ctx: RequestContext, *, name: str | None = None,
+                        role: str | None = None, goals: list[str] | None = None,
+                        comms_style: str | None = None) -> dict | None:
+    """Update only the provided fields (COALESCE keeps the rest)."""
+    return _one(
+        """
+        UPDATE user_profile SET
+            name = COALESCE(%s, name),
+            role = COALESCE(%s, role),
+            goals = COALESCE(%s, goals),
+            comms_style = COALESCE(%s, comms_style)
+        WHERE id=%s AND tenant_id=%s
+        RETURNING id, tenant_id, name, role, goals, comms_style
+        """,
+        (name, role, json.dumps(goals) if goals is not None else None,
+         comms_style, ctx.user_id, ctx.tenant_id),
+    )
+
+
 # ---- Tasks ----------------------------------------------------------------
 def list_tasks(ctx: RequestContext, status: str | None = None) -> list[dict] | None:
     if status:

@@ -34,13 +34,18 @@ class RequestContext:
 
 
 def _dev_context() -> RequestContext:
-    return RequestContext(
+    base = RequestContext(
         tenant_id=settings.shai_dev_tenant_id,
         user_id=settings.shai_dev_user_id,
         role="founder",
         goals=("protect daily unprompted opens", "validate the executive habit"),
         comms_style="direct, warm, concise",
     )
+    # Overlay the live profile so the settings screen actually drives prompting.
+    from . import repo  # lazy: avoids a deps<->repo import cycle
+
+    row = repo.get_user_profile(base)
+    return _context_from_profile(row) if row else base
 
 
 def _context_from_profile(row: dict) -> RequestContext:
