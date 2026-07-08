@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatfield Command Center</title>
+<style>
+  :root {
+    --page: #f4f2ec;
+    --card: #fdfcfa;
+    --ink: #1c1b17;
+    --ink-2: #5c594f;
+    --ink-3: #8a8779;
+    --hairline: #e3e0d6;
+    --pine: #1f5c46;
+    --pine-soft: #e6efe9;
+    --brass: #8a6a2f;
+    --mark: #1e8a5e;          /* validated chart mark */
+    --good: #0ca30c;
+    --good-text: #006300;
+    --warning: #fab219;
+    --serious: #ec835a;
+    --critical: #d03b3b;
+    --critical-wash: #faeceb;
+    --warning-wash: #faf3e0;
+    --shadow: 0 1px 2px rgba(28,27,23,.05), 0 4px 14px rgba(28,27,23,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #12110e;
+      --card: #1c1b18;
+      --ink: #f2f0e9;
+      --ink-2: #b5b2a5;
+      --ink-3: #85826f;
+      --hairline: #32302a;
+      --pine: #5cbd93;
+      --pine-soft: #21302a;
+      --brass: #c9a55e;
+      --mark: #35a97a;
+      --good: #0ca30c;
+      --good-text: #4fc76f;
+      --critical-wash: #33201e;
+      --warning-wash: #322a19;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #12110e; --card: #1c1b18; --ink: #f2f0e9; --ink-2: #b5b2a5;
+    --ink-3: #85826f; --hairline: #32302a; --pine: #5cbd93; --pine-soft: #21302a;
+    --brass: #c9a55e; --mark: #35a97a; --good-text: #4fc76f;
+    --critical-wash: #33201e; --warning-wash: #322a19;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.3);
+  }
+  :root[data-theme="light"] {
+    --page: #f4f2ec; --card: #fdfcfa; --ink: #1c1b17; --ink-2: #5c594f;
+    --ink-3: #8a8779; --hairline: #e3e0d6; --pine: #1f5c46; --pine-soft: #e6efe9;
+    --brass: #8a6a2f; --mark: #1e8a5e; --good-text: #006300;
+    --critical-wash: #faeceb; --warning-wash: #faf3e0;
+    --shadow: 0 1px 2px rgba(28,27,23,.05), 0 4px 14px rgba(28,27,23,.05);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 56px; }
+
+  /* ---------- masthead ---------- */
+  .masthead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
+  .masthead h1 {
+    margin: 0; font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 30px; font-weight: 600; letter-spacing: .01em; text-wrap: balance;
+  }
+  .masthead h1 .amp { color: var(--brass); }
+  .mast-meta { margin-left: auto; text-align: right; font-size: 13px; color: var(--ink-2); }
+  .mast-meta strong { color: var(--ink); font-weight: 600; }
+  .kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--brass); font-weight: 600; }
+  .onprop { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 10px 0 0; font-size: 13px; color: var(--ink-2); }
+  .onprop .dot { color: var(--pine); }
+
+  /* ---------- grid ---------- */
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; margin-top: 22px; }
+  .card { grid-column: span 12; background: var(--card); border: 1px solid var(--hairline); border-radius: 10px; box-shadow: var(--shadow); padding: 18px 20px 20px; }
+  @media (min-width: 880px) {
+    .span7 { grid-column: span 7; } .span5 { grid-column: span 5; }
+    .span6 { grid-column: span 6; } .span4 { grid-column: span 4; } .span8 { grid-column: span 8; }
+  }
+  .card h2 { margin: 0 0 4px; font-size: 15px; font-weight: 650; letter-spacing: .01em; }
+  .card .sub { margin: 0 0 14px; font-size: 12.5px; color: var(--ink-3); }
+  .mod-kicker { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--brass); font-weight: 650; margin-bottom: 2px; }
+
+  /* ---------- alerts ---------- */
+  .alerts { display: grid; gap: 10px; grid-column: span 12; }
+  .alert { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--hairline); border-left: 4px solid var(--critical); border-radius: 8px; padding: 12px 16px; background: var(--critical-wash); }
+  .alert.warn { border-left-color: var(--warning); background: var(--warning-wash); }
+  .alert.info { border-left-color: var(--pine); background: var(--pine-soft); }
+  .alert .badge { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; color: #fff; background: var(--critical); margin-top: 2px; }
+  .alert.warn .badge { background: #9a6d00; }
+  .alert.info .badge { background: var(--pine); color: var(--card); }
+  .alert p { margin: 0; font-size: 13.5px; }
+  .alert p b { font-weight: 650; }
+  .alert .fix { display: block; margin-top: 3px; font-size: 12.5px; color: var(--ink-2); }
+
+  /* ---------- week chart ---------- */
+  .chart { display: flex; align-items: flex-end; gap: 10px; height: 132px; padding: 6px 2px 0; }
+  .day { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; }
+  .bar { width: 26px; max-width: 60%; background: var(--mark); border-radius: 4px 4px 0 0; transition: opacity .12s; }
+  .day:hover .bar { opacity: .8; }
+  .day .val { font-size: 12px; font-weight: 650; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+  .day .zero { width: 26px; max-width: 60%; height: 2px; background: var(--hairline); border-radius: 1px; }
+  .axis { display: flex; gap: 10px; border-top: 1px solid var(--hairline); margin-top: 8px; padding-top: 6px; }
+  .axis span { flex: 1; text-align: center; font-size: 11.5px; color: var(--ink-3); }
+  .axis span.today { color: var(--pine); font-weight: 650; }
+  .day .tip { position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--page); font-size: 11.5px; padding: 4px 8px; border-radius: 5px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 2; }
+  .day:hover .tip { opacity: 1; }
+
+  /* ---------- agenda ---------- */
+  .agenda { list-style: none; margin: 0; padding: 0; }
+  .agenda .dayhead { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 650; padding: 12px 0 6px; border-bottom: 1px solid var(--hairline); }
+  .agenda li.item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--hairline); align-items: baseline; }
+  .agenda li.item:last-child { border-bottom: 0; }
+  .agenda time { flex: none; width: 118px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .agenda .what { font-size: 13.5px; }
+  .agenda .what small { display: block; color: var(--ink-3); font-size: 12px; }
+  .chip { display: inline-block; font-size: 10.5px; font-weight: 650; letter-spacing: .04em; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--hairline); color: var(--ink-2); vertical-align: 1px; margin-left: 6px; }
+  .chip.zoom { color: var(--pine); border-color: var(--pine); }
+  .chip.clash { color: var(--critical); border-color: var(--critical); }
+
+  /* ---------- stat tiles ---------- */
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { border: 1px solid var(--hairline); border-radius: 8px; padding: 14px 16px; }
+  .tile .label { font-size: 12px; color: var(--ink-2); margin-bottom: 2px; }
+  .tile .num { font-size: 34px; font-weight: 650; line-height: 1.1; letter-spacing: -.01em; }
+  .tile .delta { font-size: 12.5px; margin-top: 2px; }
+  .tile .delta.up { color: var(--good-text); font-weight: 650; }
+  .tile .delta.flat { color: var(--ink-3); }
+  .tile .note { font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+  .rgi-note { font-size: 12px; color: var(--ink-3); margin-top: 12px; }
+
+  /* ---------- inbox ---------- */
+  .inbox { list-style: none; margin: 0; padding: 0; }
+  .inbox li { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--hairline); align-items: baseline; }
+  .inbox li:last-child { border-bottom: 0; }
+  .inbox .from { flex: none; width: 92px; font-size: 12.5px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .inbox .subj { font-size: 13.5px; font-weight: 550; }
+  .inbox .subj small { display: block; font-weight: 400; color: var(--ink-3); font-size: 12px; }
+  .act { flex: none; margin-left: auto; font-size: 11px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--brass); }
+  .act.hot { color: var(--critical); }
+
+  /* ---------- travel ---------- */
+  .stays { list-style: none; margin: 0; padding: 0; }
+  .stays li { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--hairline); align-items: baseline; }
+  .stays li:last-child { border-bottom: 0; }
+  .stays time { flex: none; width: 118px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .stays .where { font-size: 13.5px; }
+  .stays .where small { display: block; color: var(--ink-3); font-size: 12px; }
+
+  /* ---------- dev desk / connections ---------- */
+  .dev { list-style: none; margin: 0; padding: 0; }
+  .dev li { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--hairline); align-items: baseline; font-size: 13.5px; }
+  .dev li:last-child { border-bottom: 0; }
+  .pill { flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; }
+  .pill.open { background: var(--pine-soft); color: var(--pine); }
+  .pill.merged { background: var(--hairline); color: var(--ink-2); }
+  .dev small { color: var(--ink-3); }
+  .conns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .conn { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; border: 1px solid var(--hairline); border-radius: 999px; padding: 5px 12px; color: var(--ink-2); }
+  .conn .st { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+  .conn.pend .st { background: var(--warning); }
+  .conn.pend { color: var(--ink-2); }
+  .conn b { color: var(--ink); font-weight: 600; }
+
+  footer { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--hairline); font-size: 12.5px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 24px; }
+  footer a { color: var(--ink-2); }
+
+  /* ---------- interaction layer ---------- */
+  .donebtn { flex: none; margin-left: auto; align-self: flex-start; font: 600 11px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); background: none; border: 1px solid var(--hairline); border-radius: 999px; padding: 5px 11px; cursor: pointer; }
+  .donebtn:hover { border-color: var(--pine); color: var(--pine); }
+  .donebtn:focus-visible, .ck:focus-visible, .mailbtn:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
+  [data-cc].done { opacity: .45; }
+  [data-cc].done .fix { display: none; }
+  [data-cc].done .subj, [data-cc].done p b { text-decoration: line-through; }
+  [data-cc].done .donebtn { border-color: var(--pine); color: var(--pine); }
+  .ck { flex: none; width: 17px; height: 17px; margin-top: 2px; border: 1.5px solid var(--ink-3); border-radius: 50%; background: none; cursor: pointer; padding: 0; position: relative; }
+  [data-cc].done .ck { border-color: var(--pine); background: var(--pine); }
+  [data-cc].done .ck::after { content: "✓"; position: absolute; inset: 0; color: var(--card); font-size: 11px; line-height: 15px; text-align: center; }
+  .notes-ta { width: 100%; min-height: 110px; resize: vertical; background: var(--page); color: var(--ink); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; font: 13.5px/1.5 system-ui, sans-serif; }
+  .notes-ta:focus { outline: 2px solid var(--pine); outline-offset: 1px; border-color: transparent; }
+  .notes-hint { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+  .mailbtn { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font: 600 12.5px/1 system-ui, sans-serif; color: var(--card); background: var(--pine); border-radius: 8px; padding: 10px 14px; text-decoration: none; }
+  .mailbtn:hover { opacity: .9; }
+  .saved { font-size: 11px; color: var(--good-text); margin-left: 8px; opacity: 0; transition: opacity .3s; }
+  .saved.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .bar, .day .tip, .saved { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="kicker">Superhost Hospitality · Area Operations</div>
+      <h1>Chatfield <span class="amp">/</span> Command Center</h1>
+    </div>
+    <div class="mast-meta">
+      <strong>Tuesday, July 7, 2026</strong> · evening<br>
+      Snapshot as of ~7:00 PM ET · America/New_York
+    </div>
+  </header>
+  <div class="onprop">
+    <span><span class="dot">●</span> On property: <b>Home2 Suites by Hilton — Lexington Hamburg</b> (through Sat Jul 11)</span>
+    <span>Today: 8 meetings, all done · Next up: Wed 12:30 PM KY153/KY365 Strategy</span>
+  </div>
+
+  <div class="grid">
+
+    <!-- ALERTS -->
+    <section class="alerts" aria-label="Alerts">
+      <div class="alert" data-cc="alert:api-key">
+        <span class="badge">Critical</span>
+        <p><b>An Anthropic API key is sitting in plaintext in your inbox.</b> The self-sent email “api” (Jul 6) contains a full <code>sk-ant-api03-…</code> secret key.
+          <span class="fix">Fix: rotate the key at console.anthropic.com → API Keys, then delete the email from Inbox <i>and</i> Sent. Never store keys in email — use a password manager.</span></p>
+        <button class="donebtn" type="button">Done</button>
+      </div>
+      <div class="alert warn" data-cc="alert:stay-overlap-jul15">
+        <span class="badge">Warning</span>
+        <p><b>Hotel-stay overlap Jul 15–18.</b> You're booked at TownePlace Suites Owensboro (Jul 13–18) and Home2 Lexington Hamburg (Jul 15–20) at the same time.
+          <span class="fix">Fix: shift the Home2 check-in to Jul 18, or cancel the overlapping nights if plans changed.</span></p>
+        <button class="donebtn" type="button">Done</button>
+      </div>
+      <div class="alert warn" data-cc="alert:double-bookings-jul7">
+        <span class="badge">Warning</span>
+        <p><b>Today had 3 double-bookings</b> — “recap” vs “Marriott Homework” (12:45), “recap” vs LEXHG Strategy (1:30), AI Committee vs KY153/KY365 (2:30). Two duplicate AI Committee invites are also live (Maura's + Jill's stand-in link).
+          <span class="fix">Fix: decline the stale AI Committee invite; watch the same collisions next Tuesday.</span></p>
+        <button class="donebtn" type="button">Done</button>
+      </div>
+      <div class="alert info" data-cc="alert:pr2-stale">
+        <span class="badge">Note</span>
+        <p><b>PR #2 (SHAI Core) has been open 24 days with no review.</b> It's a 81-tests-passing scaffold waiting on your call — review, merge, or move it to its own repo.</p>
+        <button class="donebtn" type="button">Done</button>
+      </div>
+    </section>
+
+    <!-- WEEK LOAD -->
+    <section class="card span5" aria-label="Meeting load">
+      <div class="mod-kicker">Calendar</div>
+      <h2>Meeting load, Jul 7–14</h2>
+      <p class="sub">Meetings per day, duplicates collapsed · hover for detail</p>
+      <div class="chart">
+        <div class="day"><span class="tip">Tue 7/7 — 8 meetings, 3 overlaps</span><span class="val">8</span><div class="bar" style="height:104px"></div></div>
+        <div class="day"><span class="tip">Wed 7/8 — KY153/KY365, GM/DOS</span><span class="val">2</span><div class="bar" style="height:26px"></div></div>
+        <div class="day"><span class="tip">Thu 7/9 — heaviest ops day</span><span class="val">6</span><div class="bar" style="height:78px"></div></div>
+        <div class="day"><span class="tip">Fri 7/10 — incl. Time Blocking</span><span class="val">3</span><div class="bar" style="height:39px"></div></div>
+        <div class="day"><span class="tip">Sat 7/11 — clear</span><span class="val">0</span><div class="zero"></div></div>
+        <div class="day"><span class="tip">Sun 7/12 — clear</span><span class="val">0</span><div class="zero"></div></div>
+        <div class="day"><span class="tip">Mon 7/13 — clear (travel to Owensboro)</span><span class="val">0</span><div class="zero"></div></div>
+        <div class="day"><span class="tip">Tue 7/14 — LEXHG, AI Comm., Paylocity</span><span class="val">3</span><div class="bar" style="height:39px"></div></div>
+      </div>
+      <div class="axis">
+        <span class="today">Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span><span>Mon</span><span>Tue</span>
+      </div>
+      <p class="rgi-note">Thursday is the crunch: five calls back-to-back from 12:30, plus the OOO/AR/GSS doc update at 9:00. Monday 7/13 is clear — good day for the Owensboro drive.</p>
+    </section>
+
+    <!-- AGENDA -->
+    <section class="card span7" aria-label="Agenda">
+      <div class="mod-kicker">Next three days</div>
+      <h2>Agenda</h2>
+      <p class="sub">All times Eastern</p>
+      <ul class="agenda">
+        <li class="dayhead">Wednesday, Jul 8</li>
+        <li class="item"><time>12:30 – 1:00p</time><span class="what">KY153/KY365 Weekly Strategy Call <span class="chip zoom">Zoom</span><small>Tricia Storms · duplicate invite exists — keep one</small></span></li>
+        <li class="item"><time>2:00 – 3:00p</time><span class="what">GM/DOS Call<small>Kameryn</small></span></li>
+
+        <li class="dayhead">Thursday, Jul 9</li>
+        <li class="item"><time>9:00 – 9:15a</time><span class="what">Update OOO, AR &amp; GSS in live Google Doc<small>You organize — 8 attendees expect it done</small></span></li>
+        <li class="item"><time>10:00 – 11:00a</time><span class="what">Open Hours 2026 with Jill <span class="chip">Optional</span><small>Jill Uceny</small></span></li>
+        <li class="item"><time>12:30 – 1:00p</time><span class="what">Update OOO today by 12 CST<small>Jill Uceny · deadline-style reminder</small></span></li>
+        <li class="item"><time>1:30 – 2:00p</time><span class="what">OWBTS Weekly Strategy Meeting <span class="chip">Teams</span><small>Paula Ling · Marriott — TownePlace Owensboro</small></span></li>
+        <li class="item"><time>3:30 – 4:00p</time><span class="what">OWBOR REVMAX <span class="chip">Teams</span><small>Theron Abell · Hilton — Owensboro riverfront</small></span></li>
+        <li class="item"><time>4:00 – 5:00p</time><span class="what">Riverfront Brio Prelim Call <span class="chip zoom">Zoom</span> <span class="chip clash">Tight turn</span><small>B. Hanson · starts the minute REVMAX ends</small></span></li>
+
+        <li class="dayhead">Friday, Jul 10</li>
+        <li class="item"><time>8:00 – 8:15a</time><span class="what">Hilton properties: post Advanced Purchase today<small>You organize — 9 attendees</small></span></li>
+        <li class="item"><time>1:00 – 2:00p</time><span class="what">Area GM touch base (Chris)<small>Mark</small></span></li>
+        <li class="item"><time>4:00 – 5:00p</time><span class="what">Time Blocking<small>Protected — keep it</small></span></li>
+      </ul>
+    </section>
+
+    <!-- PORTFOLIO -->
+    <section class="card span5" aria-label="Portfolio pulse">
+      <div class="mod-kicker">STR week · Jun 28 – Jul 4</div>
+      <h2>Portfolio pulse</h2>
+      <p class="sub">RGI (RevPAR index vs comp set) from Teresa Bitner's reports</p>
+      <div class="tiles">
+        <div class="tile">
+          <div class="label">Holiday Inn · Lexington Hamburg</div>
+          <div class="num">122.0</div>
+          <div class="delta up">▲ +38.3% vs prior week</div>
+          <div class="note">“GREAT WEEK!!!” — Teresa</div>
+        </div>
+        <div class="tile">
+          <div class="label">Home2 Suites · Lexington Hamburg</div>
+          <div class="num">110.8</div>
+          <div class="delta flat">▬ −0.01% — flat</div>
+          <div class="note">“Just needed a couple more rooms”</div>
+        </div>
+      </div>
+      <p class="rgi-note">Both properties are beating their comp sets (RGI &gt; 100). Holiday Inn's jump is the story of the week — worth asking Teresa what drove it so it can be repeated.</p>
+    </section>
+
+    <!-- INBOX -->
+    <section class="card span7" aria-label="Inbox triage">
+      <div class="mod-kicker">Gmail · last 14 days</div>
+      <h2>Inbox triage</h2>
+      <p class="sub">5 important threads, oldest first</p>
+      <ul class="inbox">
+        <li data-cc="inbox:new-hire-mckinney"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Aubrey Lester</span><span class="subj">New Hire — Miranda McKinney<small>Holiday Inn Lexington Hamburg AGM, Jul 4</small></span><span class="act">Ack</span></li>
+        <li data-cc="inbox:mckinney-hours"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Aubrey Lester</span><span class="subj">MIRANDA MCKINNEY — worked 7/2, 3–11 PM<small>Follow-up with first-shift hours, Jul 5</small></span><span class="act">Enter in Paylocity</span></li>
+        <li data-cc="inbox:api-email"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">You → You</span><span class="subj">“api” — exposed secret key<small>See critical alert above, Jul 6</small></span><span class="act hot">Rotate + delete</span></li>
+        <li data-cc="inbox:str-holidayinn-0704"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Teresa Bitner</span><span class="subj">STR Report (Holiday Inn) — RGI 122, +38.3%<small>Jul 7 · cc: Mark, Tricia</small></span><span class="act">Reply-congratulate</span></li>
+        <li data-cc="inbox:str-home2-0704"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Teresa Bitner</span><span class="subj">STR Report (Home2) — RGI 110.8, flat<small>Jul 7 · cc: you, Tricia, Melissa (Hilton)</small></span><span class="act">Review</span></li>
+      </ul>
+    </section>
+
+    <!-- TRAVEL -->
+    <section class="card span6" aria-label="Travel">
+      <div class="mod-kicker">Road schedule</div>
+      <h2>Stays</h2>
+      <p class="sub">From calendar bookings</p>
+      <ul class="stays">
+        <li><time>Jul 05 – 11</time><span class="where">Home2 Suites by Hilton — Lexington Hamburg<small>1750 Pleasant Ridge Dr, Lexington KY · current</small></span></li>
+        <li><time>Jul 11 – 13</time><span class="where">Home2 Suites by Hilton — Lexington Hamburg<small>Weekend extension</small></span></li>
+        <li><time>Jul 13 – 18</time><span class="where">TownePlace Suites by Marriott — Owensboro<small>3365 Hayden Rd, Owensboro KY</small></span></li>
+        <li><time>Jul 15 – 20</time><span class="where">Home2 Suites by Hilton — Lexington Hamburg <span class="chip clash">Overlaps Owensboro</span><small>Resolve — see warning above</small></span></li>
+      </ul>
+    </section>
+
+    <!-- DEV DESK -->
+    <section class="card span6" aria-label="Dev desk">
+      <div class="mod-kicker">chatfield-sh/claw-code</div>
+      <h2>Dev desk</h2>
+      <p class="sub">Rust workspace · 0 open issues</p>
+      <ul class="dev">
+        <li><span class="pill open">PR #2 · Open</span><span>SHAI Core: domain-neutral executive OS <small>· opened Jun 13, CI green, awaiting your review</small></span></li>
+        <li><span class="pill merged">PR #1 · Merged</span><span>ai-caddie: AI golf scoring &amp; coaching CLI</span></li>
+        <li><span class="pill open">New</span><span>This command center <small>· ships as a draft PR on claude/personal-command-center-6uh8ot</small></span></li>
+      </ul>
+      <p class="rgi-note">Verification for this repo: <code>cargo fmt</code>, <code>clippy -D warnings</code>, <code>cargo test</code> from <code>rust/</code>.</p>
+    </section>
+
+    <!-- DAILY CHECK-IN -->
+    <section class="card span6" aria-label="Scratch notes">
+      <div class="mod-kicker">Yours</div>
+      <h2>Scratch notes <span class="saved" id="cc-saved">saved</span></h2>
+      <p class="sub">Private to this browser — survives daily refreshes, never leaves your device</p>
+      <textarea class="notes-ta" id="cc-notes" placeholder="Jot anything — follow-ups, numbers to remember, who owes you what…"></textarea>
+      <p class="notes-hint">Checkmarks on alerts and inbox items are saved here too, per item, so tomorrow's refresh won't un-check them.</p>
+    </section>
+
+    <section class="card span6" aria-label="Brief tomorrow's refresh">
+      <div class="mod-kicker">Talk back</div>
+      <h2>Brief tomorrow's refresh</h2>
+      <p class="sub">The 6 AM rebuild reads your inbox — so tell it things by email</p>
+      <p style="font-size:13.5px; margin:0;">Send yourself a message with a subject starting <b>CC:</b> and any of these lines, and tomorrow's dashboard will act on them — clear an alert for good, pin a note, start tracking something new.</p>
+      <a class="mailbtn" href="mailto:chatfield@superhosthospitality.com?subject=CC%3A%20update&amp;body=done%3A%20%0Anote%3A%20%0Atrack%3A%20">✉ New CC: email (prefilled)</a>
+      <p class="notes-hint">done: <i>what you finished</i> · note: <i>pin it on tomorrow's dashboard</i> · track: <i>something to watch daily</i></p>
+    </section>
+
+    <!-- CONNECTIONS -->
+    <section class="card" aria-label="Connections">
+      <div class="mod-kicker">Data sources</div>
+      <h2>Connections</h2>
+      <p class="sub">What this snapshot could and couldn't reach</p>
+      <div class="conns">
+        <span class="conn"><span class="st"></span><b>Gmail</b> · live</span>
+        <span class="conn"><span class="st"></span><b>Google Calendar</b> · live</span>
+        <span class="conn"><span class="st"></span><b>GitHub</b> · live</span>
+        <span class="conn pend"><span class="st"></span><b>Google Drive</b> · authenticated — approve its first tool call in any interactive Claude session</span>
+        <span class="conn pend"><span class="st"></span><b>Zoom</b> · authenticated — approve its first tool call in any interactive Claude session</span>
+        <span class="conn pend"><span class="st"></span><b>Canva</b> · reconnect in claude.ai → Settings → Connectors</span>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    <span>Built by Claude Code from live Gmail, Google Calendar, and GitHub data.</span>
+    <span>To force a refresh: open a Claude Code session and say “refresh my command center.”</span>
+    <span><a href="#" id="cc-reset">Reset checkmarks &amp; notes on this device</a></span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var KEY = 'cc-state-v1';
+  var st = {};
+  try { st = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  document.querySelectorAll('[data-cc]').forEach(function (el) {
+    var id = el.getAttribute('data-cc');
+    function apply() { el.classList.toggle('done', !!st[id]); }
+    apply();
+    var btn = el.querySelector('.donebtn, .ck');
+    if (btn) btn.addEventListener('click', function () { st[id] = !st[id]; save(); apply(); });
+  });
+
+  var ta = document.getElementById('cc-notes');
+  var savedTag = document.getElementById('cc-saved');
+  var t;
+  if (ta) {
+    ta.value = st.__notes || '';
+    ta.addEventListener('input', function () {
+      st.__notes = ta.value; save();
+      if (savedTag) {
+        savedTag.classList.add('on');
+        clearTimeout(t);
+        t = setTimeout(function () { savedTag.classList.remove('on'); }, 1200);
+      }
+    });
+  }
+
+  var reset = document.getElementById('cc-reset');
+  if (reset) reset.addEventListener('click', function (e) {
+    e.preventDefault();
+    try { localStorage.removeItem(KEY); } catch (err) {}
+    location.reload();
+  });
+})();
+</script>
+</body>
+</html>
