@@ -19,14 +19,19 @@ The data inside is a point-in-time pull (see the masthead timestamp) from:
 
 ## Refreshing it
 
-The snapshot does not update itself. To refresh, open a Claude Code session on
-this repo and say:
+The **living copy is the Claude artifact**, refreshed by a daily scheduled
+Routine that follows [`REFRESH.md`](REFRESH.md) — the exact contract for what
+to pull, how to rebuild, and what never to embed (secrets). The `index.html`
+here is a periodic checkpoint, re-committed only when the dashboard's
+structure changes.
+
+To force a refresh at any time, open a Claude Code session on this repo and
+say:
 
 > refresh my command center
 
-Claude re-pulls the same sources, regenerates `index.html` with current data,
-and commits the result. Connecting Google Drive and Zoom in an interactive
-session adds two more modules (recent files, meeting recaps).
+Connecting Google Drive and Zoom in an interactive session adds two more
+modules (recent files, meeting recaps).
 
 ## Design notes
 
