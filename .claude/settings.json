@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Gmail__search_threads",
+      "mcp__Gmail__get_thread",
+      "mcp__Gmail__get_message",
+      "mcp__Gmail__list_labels",
+      "mcp__Google_Calendar__list_events",
+      "mcp__Google_Calendar__list_calendars",
+      "mcp__Google_Calendar__get_event",
+      "mcp__Google_Drive__list_recent_files",
+      "mcp__Google_Drive__search_files",
+      "mcp__Google_Drive__read_file_content",
+      "mcp__Google_Drive__get_file_metadata",
+      "mcp__Zoom_for_Claude__search_meetings",
+      "mcp__Zoom_for_Claude__search_zoom",
+      "mcp__Zoom_for_Claude__recordings_list",
+      "mcp__Zoom_for_Claude__get_meeting_assets",
+      "mcp__claude-code-remote__send_later",
+      "mcp__claude-code-remote__create_trigger",
+      "mcp__claude-code-remote__list_triggers"
+    ]
+  }
+}
