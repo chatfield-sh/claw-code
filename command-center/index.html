@@ -172,7 +172,27 @@
   .conn b { color: var(--ink); font-weight: 600; }
 
   footer { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--hairline); font-size: 12.5px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 24px; }
-  @media (prefers-reduced-motion: reduce) { .bar, .day .tip { transition: none; } }
+  footer a { color: var(--ink-2); }
+
+  /* ---------- interaction layer ---------- */
+  .donebtn { flex: none; margin-left: auto; align-self: flex-start; font: 600 11px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); background: none; border: 1px solid var(--hairline); border-radius: 999px; padding: 5px 11px; cursor: pointer; }
+  .donebtn:hover { border-color: var(--pine); color: var(--pine); }
+  .donebtn:focus-visible, .ck:focus-visible, .mailbtn:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
+  [data-cc].done { opacity: .45; }
+  [data-cc].done .fix { display: none; }
+  [data-cc].done .subj, [data-cc].done p b { text-decoration: line-through; }
+  [data-cc].done .donebtn { border-color: var(--pine); color: var(--pine); }
+  .ck { flex: none; width: 17px; height: 17px; margin-top: 2px; border: 1.5px solid var(--ink-3); border-radius: 50%; background: none; cursor: pointer; padding: 0; position: relative; }
+  [data-cc].done .ck { border-color: var(--pine); background: var(--pine); }
+  [data-cc].done .ck::after { content: "✓"; position: absolute; inset: 0; color: var(--card); font-size: 11px; line-height: 15px; text-align: center; }
+  .notes-ta { width: 100%; min-height: 110px; resize: vertical; background: var(--page); color: var(--ink); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; font: 13.5px/1.5 system-ui, sans-serif; }
+  .notes-ta:focus { outline: 2px solid var(--pine); outline-offset: 1px; border-color: transparent; }
+  .notes-hint { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+  .mailbtn { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; font: 600 12.5px/1 system-ui, sans-serif; color: var(--card); background: var(--pine); border-radius: 8px; padding: 10px 14px; text-decoration: none; }
+  .mailbtn:hover { opacity: .9; }
+  .saved { font-size: 11px; color: var(--good-text); margin-left: 8px; opacity: 0; transition: opacity .3s; }
+  .saved.on { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .bar, .day .tip, .saved { transition: none; } }
 </style>
 </head>
 <body>
@@ -196,24 +216,28 @@
 
     <!-- ALERTS -->
     <section class="alerts" aria-label="Alerts">
-      <div class="alert">
+      <div class="alert" data-cc="alert:api-key">
         <span class="badge">Critical</span>
         <p><b>An Anthropic API key is sitting in plaintext in your inbox.</b> The self-sent email “api” (Jul 6) contains a full <code>sk-ant-api03-…</code> secret key.
           <span class="fix">Fix: rotate the key at console.anthropic.com → API Keys, then delete the email from Inbox <i>and</i> Sent. Never store keys in email — use a password manager.</span></p>
+        <button class="donebtn" type="button">Done</button>
       </div>
-      <div class="alert warn">
+      <div class="alert warn" data-cc="alert:stay-overlap-jul15">
         <span class="badge">Warning</span>
         <p><b>Hotel-stay overlap Jul 15–18.</b> You're booked at TownePlace Suites Owensboro (Jul 13–18) and Home2 Lexington Hamburg (Jul 15–20) at the same time.
           <span class="fix">Fix: shift the Home2 check-in to Jul 18, or cancel the overlapping nights if plans changed.</span></p>
+        <button class="donebtn" type="button">Done</button>
       </div>
-      <div class="alert warn">
+      <div class="alert warn" data-cc="alert:double-bookings-jul7">
         <span class="badge">Warning</span>
         <p><b>Today had 3 double-bookings</b> — “recap” vs “Marriott Homework” (12:45), “recap” vs LEXHG Strategy (1:30), AI Committee vs KY153/KY365 (2:30). Two duplicate AI Committee invites are also live (Maura's + Jill's stand-in link).
           <span class="fix">Fix: decline the stale AI Committee invite; watch the same collisions next Tuesday.</span></p>
+        <button class="donebtn" type="button">Done</button>
       </div>
-      <div class="alert info">
+      <div class="alert info" data-cc="alert:pr2-stale">
         <span class="badge">Note</span>
         <p><b>PR #2 (SHAI Core) has been open 24 days with no review.</b> It's a 81-tests-passing scaffold waiting on your call — review, merge, or move it to its own repo.</p>
+        <button class="donebtn" type="button">Done</button>
       </div>
     </section>
 
@@ -291,11 +315,11 @@
       <h2>Inbox triage</h2>
       <p class="sub">5 important threads, oldest first</p>
       <ul class="inbox">
-        <li><span class="from">Aubrey Lester</span><span class="subj">New Hire — Miranda McKinney<small>Holiday Inn Lexington Hamburg AGM, Jul 4</small></span><span class="act">Ack</span></li>
-        <li><span class="from">Aubrey Lester</span><span class="subj">MIRANDA MCKINNEY — worked 7/2, 3–11 PM<small>Follow-up with first-shift hours, Jul 5</small></span><span class="act">Enter in Paylocity</span></li>
-        <li><span class="from">You → You</span><span class="subj">“api” — exposed secret key<small>See critical alert above, Jul 6</small></span><span class="act hot">Rotate + delete</span></li>
-        <li><span class="from">Teresa Bitner</span><span class="subj">STR Report (Holiday Inn) — RGI 122, +38.3%<small>Jul 7 · cc: Mark, Tricia</small></span><span class="act">Reply-congratulate</span></li>
-        <li><span class="from">Teresa Bitner</span><span class="subj">STR Report (Home2) — RGI 110.8, flat<small>Jul 7 · cc: you, Tricia, Melissa (Hilton)</small></span><span class="act">Review</span></li>
+        <li data-cc="inbox:new-hire-mckinney"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Aubrey Lester</span><span class="subj">New Hire — Miranda McKinney<small>Holiday Inn Lexington Hamburg AGM, Jul 4</small></span><span class="act">Ack</span></li>
+        <li data-cc="inbox:mckinney-hours"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Aubrey Lester</span><span class="subj">MIRANDA MCKINNEY — worked 7/2, 3–11 PM<small>Follow-up with first-shift hours, Jul 5</small></span><span class="act">Enter in Paylocity</span></li>
+        <li data-cc="inbox:api-email"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">You → You</span><span class="subj">“api” — exposed secret key<small>See critical alert above, Jul 6</small></span><span class="act hot">Rotate + delete</span></li>
+        <li data-cc="inbox:str-holidayinn-0704"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Teresa Bitner</span><span class="subj">STR Report (Holiday Inn) — RGI 122, +38.3%<small>Jul 7 · cc: Mark, Tricia</small></span><span class="act">Reply-congratulate</span></li>
+        <li data-cc="inbox:str-home2-0704"><button class="ck" type="button" aria-label="Mark done"></button><span class="from">Teresa Bitner</span><span class="subj">STR Report (Home2) — RGI 110.8, flat<small>Jul 7 · cc: you, Tricia, Melissa (Hilton)</small></span><span class="act">Review</span></li>
       </ul>
     </section>
 
@@ -325,6 +349,24 @@
       <p class="rgi-note">Verification for this repo: <code>cargo fmt</code>, <code>clippy -D warnings</code>, <code>cargo test</code> from <code>rust/</code>.</p>
     </section>
 
+    <!-- DAILY CHECK-IN -->
+    <section class="card span6" aria-label="Scratch notes">
+      <div class="mod-kicker">Yours</div>
+      <h2>Scratch notes <span class="saved" id="cc-saved">saved</span></h2>
+      <p class="sub">Private to this browser — survives daily refreshes, never leaves your device</p>
+      <textarea class="notes-ta" id="cc-notes" placeholder="Jot anything — follow-ups, numbers to remember, who owes you what…"></textarea>
+      <p class="notes-hint">Checkmarks on alerts and inbox items are saved here too, per item, so tomorrow's refresh won't un-check them.</p>
+    </section>
+
+    <section class="card span6" aria-label="Brief tomorrow's refresh">
+      <div class="mod-kicker">Talk back</div>
+      <h2>Brief tomorrow's refresh</h2>
+      <p class="sub">The 6 AM rebuild reads your inbox — so tell it things by email</p>
+      <p style="font-size:13.5px; margin:0;">Send yourself a message with a subject starting <b>CC:</b> and any of these lines, and tomorrow's dashboard will act on them — clear an alert for good, pin a note, start tracking something new.</p>
+      <a class="mailbtn" href="mailto:chatfield@superhosthospitality.com?subject=CC%3A%20update&amp;body=done%3A%20%0Anote%3A%20%0Atrack%3A%20">✉ New CC: email (prefilled)</a>
+      <p class="notes-hint">done: <i>what you finished</i> · note: <i>pin it on tomorrow's dashboard</i> · track: <i>something to watch daily</i></p>
+    </section>
+
     <!-- CONNECTIONS -->
     <section class="card" aria-label="Connections">
       <div class="mod-kicker">Data sources</div>
@@ -344,8 +386,48 @@
 
   <footer>
     <span>Built by Claude Code from live Gmail, Google Calendar, and GitHub data.</span>
-    <span>To refresh: open a Claude Code session and say “refresh my command center.”</span>
+    <span>To force a refresh: open a Claude Code session and say “refresh my command center.”</span>
+    <span><a href="#" id="cc-reset">Reset checkmarks &amp; notes on this device</a></span>
   </footer>
 </div>
+
+<script>
+(function () {
+  var KEY = 'cc-state-v1';
+  var st = {};
+  try { st = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  document.querySelectorAll('[data-cc]').forEach(function (el) {
+    var id = el.getAttribute('data-cc');
+    function apply() { el.classList.toggle('done', !!st[id]); }
+    apply();
+    var btn = el.querySelector('.donebtn, .ck');
+    if (btn) btn.addEventListener('click', function () { st[id] = !st[id]; save(); apply(); });
+  });
+
+  var ta = document.getElementById('cc-notes');
+  var savedTag = document.getElementById('cc-saved');
+  var t;
+  if (ta) {
+    ta.value = st.__notes || '';
+    ta.addEventListener('input', function () {
+      st.__notes = ta.value; save();
+      if (savedTag) {
+        savedTag.classList.add('on');
+        clearTimeout(t);
+        t = setTimeout(function () { savedTag.classList.remove('on'); }, 1200);
+      }
+    });
+  }
+
+  var reset = document.getElementById('cc-reset');
+  if (reset) reset.addEventListener('click', function (e) {
+    e.preventDefault();
+    try { localStorage.removeItem(KEY); } catch (err) {}
+    location.reload();
+  });
+})();
+</script>
 </body>
 </html>

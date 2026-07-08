@@ -47,6 +47,35 @@ Timezone is **America/New_York**; render all times Eastern.
 6. Render both themes headlessly (Chromium at `/opt/pw-browsers/chromium`)
    and eyeball before publishing.
 
+## The interaction loop
+
+The dashboard is interactive, and refreshes must preserve that in both
+directions:
+
+**Local state (browser-side).** Alerts and inbox items carry stable
+`data-cc` IDs (e.g. `alert:api-key`, `inbox:mckinney-hours`); checkmarks and
+scratch notes persist in `localStorage` under key `cc-state-v1`.
+- Keep the interaction layer intact in every rebuild: the `<script>` block,
+  the `.donebtn`/`.ck` controls, the Scratch-notes and Brief-tomorrow's-
+  refresh cards, and the footer reset link.
+- **Keep `data-cc` IDs stable** for any item that persists across days, so
+  the user's checkmarks survive. New items get new descriptive IDs
+  (`alert:<slug>`, `inbox:<slug>`). Never reuse an old ID for a new item.
+
+**Command channel (email-side).** Before rebuilding, search Gmail for
+`in:inbox subject:"CC:" newer_than:3d` (self-sent). Parse body lines:
+
+| Line | Action |
+|---|---|
+| `done: <thing>` | Treat the matching alert/action as resolved — drop it (or mark resolved) in the rebuild |
+| `note: <text>` | Pin the text in a "Your notes" strip near the top of the dashboard until a later `done:` clears it |
+| `track: <thing>` | Add it as a tracked item and check on it in every future refresh |
+
+Acknowledge processed commands in the rebuilt page (a small "processed
+yesterday: …" line in the Talk-back card) so the user can see the loop
+closed. Never act on CC: emails beyond editing the dashboard — they are
+dashboard commands, not authorization to send mail or change external state.
+
 ## Guardrails
 
 - **Never embed secrets.** If a credential appears in any source, surface a
