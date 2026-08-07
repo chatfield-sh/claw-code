@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "invoice-extract"
+version = "0.1.0"
+description = "Read vendor, invoice number, GL account and amount from scanned invoices."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.120",
+    "pydantic>=2.7",
+    "openpyxl>=3.1",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+invoice-extract = "invoice_extract.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/invoice_extract"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
