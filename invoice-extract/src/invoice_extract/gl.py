@@ -67,10 +67,41 @@ def _assign_property(result: InvoiceResult, config: Config) -> None:
         lowered = hint.lower()
         # Longest hint first, so "riverside inn conference center" beats
         # "riverside inn" when both are configured.
-        for needle in sorted(config.property_hints, key=len, reverse=True):
-            if needle in lowered:
-                result.property_code = config.property_hints[needle]
-                return
+        matched = [
+            needle
+            for needle in sorted(config.property_hints, key=len, reverse=True)
+            if needle in lowered
+        ]
+        if matched:
+            result.property_code = config.property_hints[matched[0]]
+            # Several hints matching is usually fine. Two cases are benign:
+            # they agree (a property's name and its street address both point
+            # at it), or the loser is contained in the winner ("riverside inn"
+            # inside "riverside inn conference center"), which is a deliberate
+            # specificity hierarchy — the longer, more specific one should win.
+            #
+            # What is not benign is two *disjoint* hints resolving to different
+            # codes. Settling that silently by string length would put the cost
+            # on the wrong property's P&L with nothing to show for it.
+            winner = matched[0]
+            conflicting = [
+                n
+                for n in matched[1:]
+                if config.property_hints[n] != result.property_code
+                and n not in winner
+            ]
+            if conflicting:
+                others = ", ".join(
+                    f"{n!r} -> {config.property_hints[n]}" for n in conflicting
+                )
+                result.add(
+                    "ambiguous-property",
+                    f"the bill-to text matches more than one property: used "
+                    f"{matched[0]!r} -> {result.property_code}, but it also "
+                    f"matches {others}",
+                    severity="warning",
+                )
+            return
 
     if config.require_property:
         result.add(

@@ -113,6 +113,25 @@ Useful flags:
 invoice already submitted in an earlier batch; delete it and duplicate
 detection resets to within-batch only.
 
+## Try it on the samples
+
+`samples/` holds seven synthetic scans — rotated, speckled, JPEG-softened —
+covering a clean invoice, a vendor needing keyword coding, a utility bill with
+a prior balance, an unmapped vendor, a statement, a badly degraded scan, and a
+re-scan of an invoice already submitted.
+
+```bash
+python samples/make_samples.py                       # generate the scans
+invoice-extract samples/scans/ \
+  -c config/config.example.yaml \
+  -g config/gl_accounts.example.yaml \
+  -o samples/out/demo.xlsx                           # real run, needs a key
+```
+
+To see the output shape without spending anything, `python samples/demo_run.py`
+runs the same pipeline with canned model responses. That proves nothing about
+reading accuracy — it exercises everything around the model.
+
 ## Matching your upload template
 
 The `columns:` block in `config.yaml` is the column layout — keys are fields

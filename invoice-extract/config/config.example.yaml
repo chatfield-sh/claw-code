@@ -43,8 +43,15 @@ columns:
   source_file: Scan File
 
 # Map text found in the bill-to / ship-to block to your internal property code.
-# Matching is case-insensitive substring, longest match wins.
+# Matching is case-insensitive substring, longest match wins. Give each property
+# both its name and its street address — vendors use one or the other, and
+# several hints pointing at the SAME code is expected. Two hints that match the
+# same invoice but resolve to DIFFERENT codes is a config error: the invoice is
+# flagged rather than silently coded to whichever string happened to be longer.
 property_hints:
-  "1234 harbor blvd": "HTL-001"
   "riverside inn": "HTL-002"
+  "1234 harbor blvd": "HTL-002"
   "downtown suites": "HTL-003"
+  "88 fifth street": "HTL-003"
+  "harborview lodge": "HTL-001"
+  "500 marine drive": "HTL-001"

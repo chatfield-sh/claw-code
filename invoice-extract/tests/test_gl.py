@@ -105,6 +105,39 @@ def test_vendor_name_variations_still_match(gl):
     assert coded(gl, vendor_name=text("SYSCO CORP.")).gl_account == "6410"
 
 
+def test_several_hints_agreeing_on_one_property_is_silent():
+    # A property's name and its street address both appearing is the norm.
+    config = Config(
+        property_hints={"riverside inn": "HTL-002", "1234 harbor blvd": "HTL-002"},
+        require_gl_account=False,  # this test is about the property, not coding
+    )
+    result = build(
+        "scan.pdf",
+        make_invoice(property_hint=text("Riverside Inn, 1234 Harbor Blvd")),
+        config,
+    )
+    assign(result, GLConfig(), config)
+    assert result.property_code == "HTL-002"
+    assert result.findings == []
+
+
+def test_hints_disagreeing_on_the_property_are_flagged():
+    config = Config(
+        property_hints={"riverside inn": "HTL-002", "1234 harbor blvd": "HTL-001"},
+        require_gl_account=False,  # this test is about the property, not coding
+    )
+    result = build(
+        "scan.pdf",
+        make_invoice(property_hint=text("Riverside Inn, 1234 Harbor Blvd")),
+        config,
+    )
+    assign(result, GLConfig(), config)
+    # Longest match still wins, but the ambiguity is surfaced, not hidden.
+    assert result.property_code == "HTL-001"
+    assert "ambiguous-property" in {f.code for f in result.findings}
+    assert result.status == "auto"
+
+
 def test_property_hint_matches_longest_first():
     config = Config(
         property_hints={
@@ -119,6 +152,9 @@ def test_property_hint_matches_longest_first():
     )
     assign(result, GLConfig(), config)
     assert result.property_code == "HTL-009"
+    # A more specific hint containing a broader one is a deliberate hierarchy,
+    # not an ambiguous config — it must not be flagged.
+    assert "ambiguous-property" not in {f.code for f in result.findings}
 
 
 def test_require_property_holds_when_unmatched():
