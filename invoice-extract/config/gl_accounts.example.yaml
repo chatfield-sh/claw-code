@@ -1,0 +1,83 @@
+# Copy to gl_accounts.yaml and replace with your chart of accounts.
+#
+# The GL account is the one required field that is NOT printed on an invoice —
+# it is your coding decision, not the vendor's. This file is how that decision
+# gets made consistently. Anything it cannot resolve goes to the exceptions
+# sheet rather than being guessed.
+#
+# Resolution order, first match wins:
+#   1. vendor keyword  — a keyword under the matched vendor
+#   2. vendor default  — that vendor's `account`
+#   3. global keyword  — a keyword under the top-level `keywords`
+#   4. fallback        — `fallback_account`, if set
+#
+# Keywords are matched case-insensitively against the invoice's line-item
+# descriptions and vendor name.
+
+# The chart of accounts. Every account referenced below must appear here —
+# the loader rejects the file otherwise, so a typo'd code fails at startup
+# instead of reaching m3.
+accounts:
+  "6110": "Guest Room Supplies"
+  "6120": "Linen & Terry"
+  "6210": "Repairs & Maintenance - Building"
+  "6215": "Repairs & Maintenance - Equipment"
+  "6220": "Grounds & Landscaping"
+  "6310": "Utilities - Electric"
+  "6320": "Utilities - Gas"
+  "6330": "Utilities - Water & Sewer"
+  "6340": "Utilities - Telecom & Internet"
+  "6410": "Food Cost"
+  "6420": "Beverage Cost"
+  "6510": "Cleaning Supplies"
+  "6610": "Office Supplies"
+  "6710": "Professional Fees"
+  "6810": "Franchise & Brand Fees"
+  "6910": "Contract Services"
+  "9999": "Uncoded - Requires Review"
+
+# Optional. Leave unset (recommended) so unmapped vendors land in the
+# exceptions sheet instead of being swept into a catch-all.
+# fallback_account: "9999"
+
+# Applied when no vendor rule matched.
+keywords:
+  "landscap": "6220"
+  "pest control": "6910"
+  "internet": "6340"
+  "telephone": "6340"
+
+vendors:
+  - name: "Sysco Corporation"
+    account: "6410"
+    keywords:
+      "beverage": "6420"
+      "beer": "6420"
+      "wine": "6420"
+      "liquor": "6420"
+
+  - name: "Ecolab Inc."
+    account: "6510"
+
+  - name: "City Water & Power"
+    account: "6330"
+    keywords:
+      "electric": "6310"
+      "kwh": "6310"
+
+  - name: "Standard Textile Co., Inc."
+    account: "6120"
+
+  - name: "Marriott International"
+    account: "6810"
+
+  # A vendor with no `account` and no matching keyword falls through to the
+  # global keywords, then to review. Listing it here without an account is a
+  # way to record "we know this vendor, coding depends on the line items".
+  - name: "Grainger"
+    keywords:
+      "hvac": "6215"
+      "filter": "6215"
+      "plumb": "6210"
+      "lamp": "6210"
+      "paint": "6210"

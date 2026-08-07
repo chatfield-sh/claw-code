@@ -1,0 +1,57 @@
+# Copy to config.yaml and edit. Every key here is optional; the values shown
+# are the defaults.
+
+model: claude-opus-5
+effort: high          # low | medium | high | xhigh | max
+max_tokens: 16000
+
+# Read every invoice twice, independently, and flag any disagreement on
+# vendor / invoice number / date / amount. This is the main accuracy guard.
+# Turning it off halves the API cost and removes that guard.
+verify: true
+
+# How far the invoice's own components may miss its stated total before the
+# invoice is sent to review. Covers vendor rounding, not misreads.
+arithmetic_tolerance: 0.02
+
+# Date sanity bounds — a misread year or a transposed day/month usually lands
+# outside one of these.
+max_future_days: 3
+max_age_days: 730
+
+# When true, an invoice with no GL account goes to review rather than being
+# exported with a blank code.
+require_gl_account: true
+# When true, the same applies to the property code.
+require_property: false
+
+# The upload sheet's column layout. Keys are fields this tool produces; values
+# are the header text your accounting team's template expects. Reorder, rename
+# or drop rows to match the template exactly — the export follows this order.
+#
+# Available fields: vendor_name, vendor_remit_to, invoice_number, invoice_date,
+# due_date, purchase_order, account_number, gl_account, gl_rule, subtotal, tax,
+# freight, other_charges, discount, total_amount, currency, property_code,
+# source_file, status, review_reasons, confidence
+columns:
+  vendor_name: Vendor
+  invoice_number: Invoice Number
+  invoice_date: Invoice Date
+  gl_account: GL Account
+  total_amount: Amount
+  property_code: Property
+  source_file: Scan File
+
+# Map text found in the bill-to / ship-to block to your internal property code.
+# Matching is case-insensitive substring, longest match wins. Give each property
+# both its name and its street address — vendors use one or the other, and
+# several hints pointing at the SAME code is expected. Two hints that match the
+# same invoice but resolve to DIFFERENT codes is a config error: the invoice is
+# flagged rather than silently coded to whichever string happened to be longer.
+property_hints:
+  "riverside inn": "HTL-002"
+  "1234 harbor blvd": "HTL-002"
+  "downtown suites": "HTL-003"
+  "88 fifth street": "HTL-003"
+  "harborview lodge": "HTL-001"
+  "500 marine drive": "HTL-001"
